@@ -1,1 +1,16 @@
-# project-internal
+# dof-project
+
+```
+📁 project/
+│
+├── 📁 0-data/
+│   ├── ⚙️ SystemData/
+│   ├── 📦 AppData/
+│   └── 👤 UserData/
+├── 📥 1-input/
+│   └── 🧱 raw N/
+├── 🔄 2-process/
+│   └── 🔁 rev N/
+└── 📤 3-output/
+    └── ✅ ver N/
+	

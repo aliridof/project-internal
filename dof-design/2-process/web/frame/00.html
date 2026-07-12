@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>dof code IDE</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "border-subtle": "#f3f4f6",
+          "on-surface-variant": "#444748",
+          "on-background": "#1b1c1c",
+          "surface-container-low": "#f5f3f3",
+          "surface-container-high": "#e9e8e7",
+          "surface-container-lowest": "#ffffff",
+          "surface-container": "#efeded",
+          "on-primary": "#ffffff",
+          "primary": "#000000",
+          "on-surface": "#1b1c1c",
+          "background": "#ffffff",
+          "outline-variant": "#c4c7c7",
+          "outline": "#747878",
+          "error": "#ba1a1a",
+          "on-error": "#ffffff"
+        },
+        borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+        fontFamily: { sans: ["Inter"], mono: ["JetBrains Mono"] }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; background-color: #ffffff; color: #1b1c1c; }
+  .code-font { font-family: 'JetBrains Mono', monospace; }
+  .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; font-size: 20px; }
+  .ide-shadow { box-shadow: 0 10px 50px rgba(0, 0, 0, 0.05); }
+
+  [data-purpose="ide-container"] { height: min(860px, calc(100dvh - 2rem)); }
+  @media (max-width: 767px) { [data-purpose="ide-container"] { height: min(860px, calc(100dvh - 1rem)); } }
+
+  /* [FIX] min-w-0 agar grid track menghormati persen */
+  [data-panel] { position: relative; min-width: 0; }
+  [data-panel-resizer] {
+    width: 6px; cursor: col-resize; z-index: 40;
+    background-color: transparent; transition: background-color 0.2s;
+  }
+  [data-panel-resizer]:hover { background-color: #cbd5e1; }
+
+  .template-main { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  .template-top, .template-bottom { flex-shrink: 0; }
+
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }
+
+  /* grid selalu bisa scroll horizontal jika total melebihi 100% */
+  #main-grid { overflow-x: auto; }
+
+  /* [EXE OPSI A] Swipe mobile hanya di <=640px */
+  @media (max-width: 640px) {
+    #main-grid {
+      display: flex !important;
+      grid-template-columns: none !important;
+      height: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      scroll-padding: 0;
+    }
+    #main-grid > [data-panel] {
+      min-width: 100%; max-width: 100%; width: 100%;
+      flex-shrink: 0; overflow: hidden;
+      scroll-snap-align: start; scroll-snap-stop: always;
+      border-right: none;
+    }
+    [data-panel-resizer] { display: none !important; }
+  }
+</style>
+</head>
+<body class="bg-background text-on-background flex items-center justify-center h-[100dvh] md:min-h-screen p-2 md:p-4 overflow-hidden md:overflow-visible">
+
+<!-- ============ IDE CONTAINER ============ -->
+<main class="w-full max-w-[1650px] h-[min(860px,calc(100dvh-1rem))] md:h-[min(860px,calc(100dvh-2rem))] bg-surface-container-lowest border border-border-subtle rounded-3xl ide-shadow overflow-hidden flex flex-col" data-purpose="ide-container">
+
+  <header class="h-12 border-b border-border-subtle flex items-center px-4 justify-between bg-surface-container-lowest">
+    <div class="flex items-center gap-6">
+      <div onclick="openSidebar()" class="flex items-center justify-center w-8 h-8 rounded-md hover:bg-surface-container-low cursor-pointer text-on-surface-variant hover:text-primary transition-colors" title="Menu">
+        <span class="material-symbols-outlined text-[18px]">menu</span>
+      </div>
+    </div>
+    <div class="flex items-center bg-surface-container-low p-1 rounded-full">
+      <div class="relative group">
+        <!-- [FIX] default putih (#ffffff), hover redup (surface-container-low) -->
+        <button class="px-5 py-1.5 text-sm font-medium text-on-surface flex items-center gap-2 bg-surface-container-lowest hover:bg-surface-container-low rounded-full transition-colors">
+          <span class="material-symbols-outlined text-on-surface-variant text-[18px]">drag_handle</span>
+          Panel<span class="material-symbols-outlined text-on-surface-variant text-[16px]">expand_more</span>
+        </button>
+        <!-- [FIX] kembali hidden, muncul saat group-hover -->
+        <div class="absolute top-full left-0 pt-2 w-48 hidden group-hover:block z-50">
+          <div id="dropdown-list" class="bg-surface-container-lowest border border-outline-variant rounded-md shadow-lg p-1 space-y-0.5"></div>
+        </div>
+      </div>
+    </div>
+    <div class="flex items-center gap-4">
+      <!-- icon archive di header sudah dihapus (refactor #3) -->
+      <div onclick="resetPanelWidths()" class="flex items-center justify-center w-8 h-8 rounded-md hover:bg-surface-container-low cursor-pointer text-on-surface-variant hover:text-primary transition-colors" title="Reset Panel Widths">
+        <span class="material-symbols-outlined text-[18px]">split_scene</span>
+      </div>
+    </div>
+  </header>
+
+  <section id="main-grid" class="flex-grow grid h-full w-full overflow-hidden bg-surface-container-lowest" data-purpose="combined-section"></section>
+</main>
+
+<!-- ============ SIDEBAR BACKDROP ============ -->
+<div id="sidebar-backdrop" class="fixed inset-0 bg-black/20 z-[50] hidden" onclick="closeSidebar()"></div>
+
+<!-- ============ SIDEBAR ============ -->
+<aside id="sidebar" class="fixed left-0 top-0 h-full w-full md:w-64 z-[60] -translate-x-full transition-transform duration-300 bg-surface-container-lowest shadow-[0_0_20px_rgba(0,0,0,0.02)] flex flex-col border-r border-border-subtle">
+  <div class="h-16 px-6 flex items-center justify-between">
+    <div class="flex items-center gap-3"><span class="font-bold text-primary text-sm">Guest</span></div>
+    <button onclick="closeSidebar()" class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div class="flex-1 px-4 py-2 space-y-8 overflow-y-auto custom-scrollbar">
+    <div>
+      <button onclick="alert('New Project')" class="w-full h-10 border border-border-subtle rounded-lg flex items-center px-3 gap-3 bg-surface-container-lowest hover:bg-surface-container-low transition-all active:scale-[0.98]">
+        <span class="material-symbols-outlined text-primary">add</span>
+        <span class="text-sm font-medium text-on-surface">New Project</span>
+      </button>
+    </div>
+    <div class="space-y-4">
+      <div class="flex items-center gap-2 px-2">
+        <h3 class="text-[10px] font-medium tracking-widest uppercase text-on-surface-variant">projects</h3>
+        <span id="proj-count" class="bg-surface-container-low text-on-surface-variant px-1.5 py-0.5 rounded text-[10px] font-bold">0</span>
+      </div>
+      <nav id="project-tree" class="space-y-1"></nav>
+    </div>
+  </div>
+  <div class="p-4 border-t border-border-subtle space-y-3">
+    <div onclick="openArchivePopup()" class="px-2 py-1 cursor-pointer text-[10px] font-medium tracking-widest uppercase text-on-surface-variant hover:text-primary transition-colors">Archive</div>
+    <button class="w-full bg-primary text-on-primary py-3 rounded-full font-medium text-sm font-bold hover:opacity-90 transition-opacity active:scale-95 shadow-lg shadow-black/10">Log In</button>
+    <p class="text-center text-[10px] font-medium text-on-surface-variant">Sign up to save your chat history</p>
+  </div>
+</aside>
+
+<!-- ============ ARCHIVE BACKDROP ============ -->
+<div id="archive-backdrop" class="fixed inset-0 bg-black/40 z-[70] hidden" onclick="closeArchivePopup()"></div>
+
+<!-- ============ ARCHIVE POPUP (ENLARGED) ============ -->
+<div id="archive-popup" class="fixed inset-0 m-auto w-[32rem] max-w-[95vw] h-fit z-[80] hidden bg-surface-container-lowest rounded-xl overflow-hidden flex flex-col shadow-[0_10px_50px_rgba(0,0,0,0.05)] border border-outline-variant">
+  <div class="flex items-center justify-between p-6 border-b border-border-subtle">
+    <div class="flex items-center gap-3">
+      <span class="material-symbols-outlined text-primary">archive</span>
+      <h2 class="text-[18px] font-bold text-on-surface tracking-tight">Archive</h2>
+    </div>
+    <button onclick="closeArchivePopup()" class="text-on-surface-variant hover:text-primary transition-colors">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div id="archive-list" class="p-6 flex-1 space-y-2 max-h-[70vh] overflow-y-auto custom-scrollbar"></div>
+  <div class="p-6 pt-0">
+    <button onclick="deleteAllProjects()" class="w-full py-4 bg-primary hover:bg-black text-on-primary rounded-xl font-bold text-sm transition-all">Delete All</button>
+  </div>
+</div>
+
+<!-- ============ TEMPLATE PANEL ============ -->
+<div id="panel-template" class="hidden flex flex-col bg-surface-container-lowest overflow-hidden h-full border-r border-border-subtle" data-purpose="template-panel">
+  <div class="template-top shrink-0 h-12 border-b border-border-subtle flex items-center justify-between px-4 bg-surface-container-lowest">
+    <span class="text-xs font-semibold text-on-surface">Template - Panel X - Section Top</span>
+    <button class="w-6 h-6 flex items-center justify-center rounded-md hover:bg-surface-container-low text-on-surface-variant hover:text-primary transition-colors" title="Hide Panel">
+      <span class="material-symbols-outlined text-[16px]">close</span>
+    </button>
+  </div>
+  <div class="template-main flex-grow overflow-y-auto bg-surface-container-lowest p-4">
+    <p class="text-sm text-on-surface-variant">Template - Panel X - Section Content</p>
+  </div>
+  <div class="template-bottom shrink-0 h-10 border-t border-border-subtle flex items-center justify-between px-4 bg-surface-container-low text-[10px] text-on-surface-variant select-none font-medium">
+    <span>Template - Panel X - Section Bottom</span>
+    <span>100%</span>
+  </div>
+</div>
+
+<script>
+// ============ STATE ============
+const stamp = (d) => {
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}:${p(d.getMonth()+1)}:${p(d.getDate())}:${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+};
+let projects = [{ name: 'Demo', branches: ['Branch-project'] }];
+let archived = [
+  { name: 'Project-Name', deletedAt: stamp(new Date(Date.now() - 86400000)) },
+  { name: 'Project-Lain', deletedAt: stamp(new Date(Date.now() - 2*86400000)) }
+];
+let panelOrder = [];
+let draggedName = null;
+
+// ============ SIDEBAR ============
+const openSidebar = () => {
+  document.getElementById('sidebar').classList.remove('-translate-x-full');
+  document.getElementById('sidebar-backdrop').classList.remove('hidden');
+  renderSidebar();
+};
+const closeSidebar = () => {
+  document.getElementById('sidebar').classList.add('-translate-x-full');
+  document.getElementById('sidebar-backdrop').classList.add('hidden');
+};
+
+// ============ ARCHIVE POPUP ============
+const openArchivePopup = () => {
+  renderArchiveList();
+  document.getElementById('archive-popup').classList.remove('hidden');
+  document.getElementById('archive-backdrop').classList.remove('hidden');
+};
+const closeArchivePopup = () => {
+  document.getElementById('archive-popup').classList.add('hidden');
+  document.getElementById('archive-backdrop').classList.add('hidden');
+};
+
+const renderSidebar = () => {
+  document.getElementById('proj-count').textContent = projects.length;
+  const tree = document.getElementById('project-tree');
+  tree.innerHTML = projects.map(p => `
+    <div class="space-y-1">
+      <a class="group flex items-center justify-between px-2 py-2 rounded-lg transition-all cursor-pointer" href="#">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="material-symbols-outlined text-primary">folder</span>
+          <span class="text-sm truncate text-on-surface">${p.name}</span>
+        </div>
+        <span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded text-[10px] font-bold border border-border-subtle ml-auto mr-2">${p.branches.length}</span>
+        <span class="material-symbols-outlined text-on-surface-variant">expand_more</span>
+      </a>
+      <div class="ml-4 border-l border-border-subtle space-y-1">
+        ${p.branches.map(b => `
+          <a class="group flex items-center px-3 py-1.5 gap-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all" href="#">
+            <span class="material-symbols-outlined text-[18px]">account_tree</span>
+            <span class="text-sm truncate">${b}</span>
+          </a>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+};
+
+const renderArchiveList = () => {
+  const list = document.getElementById('archive-list');
+  if (archived.length === 0) {
+    list.innerHTML = `<p class="text-sm text-on-surface-variant text-center py-4">No archived projects</p>`;
+    return;
+  }
+  list.innerHTML = archived.map(p => `
+    <div class="flex items-center justify-between p-4 border border-border-subtle rounded-lg bg-surface-container-low">
+      <div class="flex items-center gap-4">
+        <span class="material-symbols-outlined text-on-surface-variant">folder</span>
+        <div class="flex flex-col">
+          <span class="text-sm font-semibold text-on-surface">${p.name}</span>
+          <span class="text-[11px] text-on-surface-variant">Deleted at ${p.deletedAt}</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="restoreProject('${p.name}')" class="px-4 py-1.5 bg-surface-container-lowest border border-outline text-on-surface rounded-md text-xs font-medium hover:bg-surface-container-low transition-colors">Restore</button>
+        <button onclick="deleteProject('${p.name}')" class="p-1.5 text-on-surface-variant hover:text-error transition-colors">
+          <span class="material-symbols-outlined text-[20px]">delete</span>
+        </button>
+      </div>
+    </div>
+  `).join('');
+};
+
+const restoreProject = (name) => {
+  const idx = archived.findIndex(a => a.name === name);
+  if (idx === -1) return;
+  const item = archived.splice(idx, 1)[0];
+  projects.push({ name: item.name, branches: [] });
+  renderArchiveList(); renderSidebar();
+};
+const deleteProject = (name) => {
+  archived = archived.filter(a => a.name !== name);
+  renderArchiveList();
+};
+const deleteAllProjects = () => {
+  if (!confirm('Delete all archived projects permanently?')) return;
+  archived = [];
+  renderArchiveList();
+  closeArchivePopup();
+};
+
+// ============ TEMPLATE PANELS / LAYOUT ============
+const wrapAndInitResizers = () => {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  syncPanelOrderFromDOM();
+  updateGridLayout();
+  renderDropdownList();
+  window.addEventListener('resize', updateGridLayout);
+};
+const syncPanelOrderFromDOM = () => {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  panelOrder = Array.from(grid.children).filter(w => w.hasAttribute('data-panel')).map(w => w.getAttribute('data-panel'));
+};
+// [EXE OPSI A] early-return di <=640px agar CSS flex swipe yg berlaku
+const updateGridLayout = () => {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  if (window.innerWidth <= 640) return;
+  const visible = Array.from(grid.children).filter(w => w.style.display !== 'none');
+  if (visible.length === 0) { grid.style.gridTemplateColumns = ''; return; }
+  grid.style.gridTemplateColumns = visible.map((w, i) => i === visible.length - 1 ? '1fr' : (w.dataset.width || '1fr')).join(' ');
+  visible.forEach((w, i) => {
+    const r = w.querySelector('[data-panel-resizer]');
+    if (r) r.style.display = (i === visible.length - 1) ? 'none' : '';
+  });
+};
+
+// ===== RESIZER DRAG LOGIC =====
+const initResizers = () => {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  grid.querySelectorAll('[data-panel-resizer]').forEach(resizer => {
+    resizer.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const wrapper = resizer.closest('[data-panel]');
+      const gridRect = grid.getBoundingClientRect();
+      const startX = e.clientX;
+      const startWidth = wrapper.getBoundingClientRect().width;
+      const onMove = (ev) => {
+        let newWidth = startWidth + (ev.clientX - startX);
+        if (newWidth < 120) newWidth = 120;
+        wrapper.dataset.width = ((newWidth / gridRect.width) * 100) + '%';
+        updateGridLayout();
+      };
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    });
+  });
+};
+
+const togglePanelVisibility = (name, force) => {
+  const wrapper = document.querySelector(`[data-panel="${name}"]`);
+  if (!wrapper) return;
+  const makeVisible = force !== undefined ? force : wrapper.style.display === 'none';
+  wrapper.style.display = makeVisible ? '' : 'none';
+  renderDropdownList();
+  updateGridLayout();
+};
+const movePanelInOrder = (drag, target) => {
+  const di = panelOrder.indexOf(drag), ti = panelOrder.indexOf(target);
+  if (di === -1 || ti === -1 || di === ti) return;
+  panelOrder.splice(di, 1);
+  panelOrder.splice(ti, 0, drag);
+  applyDOMOrder();
+};
+const applyDOMOrder = () => {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  panelOrder.forEach(name => {
+    const w = document.querySelector(`[data-panel="${name}"]`);
+    if (w) grid.appendChild(w);
+  });
+  updateGridLayout();
+};
+const renderDropdownList = () => {
+  const c = document.getElementById('dropdown-list');
+  if (!c) return;
+  c.innerHTML = '';
+  panelOrder.forEach(name => {
+    const w = document.querySelector(`[data-panel="${name}"]`);
+    if (!w) return;
+    const visible = w.style.display !== 'none';
+    const panelNum = name.replace('panel', '');
+    const label = `Panel ${panelNum}`;
+    const item = document.createElement('div');
+    item.className = 'flex items-center px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface rounded-md transition-colors cursor-grab active:cursor-grabbing select-none';
+    item.setAttribute('draggable', 'true');
+    item.setAttribute('data-name', name);
+    item.innerHTML = `<span class="material-symbols-outlined text-on-surface-variant mr-1.5 pointer-events-none" style="font-size:14px">drag_handle</span><span class="font-medium pointer-events-none">${label}</span>`;
+    const btn = document.createElement('button');
+    btn.className = 'ml-auto w-6 h-6 flex items-center justify-center rounded-md hover:bg-surface-container-high text-on-surface-variant hover:text-primary';
+    btn.innerHTML = `<span class="material-symbols-outlined pointer-events-none" style="font-size:14px">${visible ? 'close' : 'add'}</span>`;
+    btn.addEventListener('click', (e) => { e.stopPropagation(); togglePanelVisibility(name); });
+    item.appendChild(btn);
+    item.addEventListener('dragstart', (e) => { draggedName = name; item.classList.add('opacity-40'); e.dataTransfer.setData('text/plain', name); });
+    item.addEventListener('dragend', () => { item.classList.remove('opacity-40'); draggedName = null; Array.from(c.children).forEach(x => x.classList.remove('bg-surface-container-low')); });
+    item.addEventListener('dragover', (e) => { e.preventDefault(); if (draggedName && draggedName !== name) item.classList.add('bg-surface-container-low'); });
+    item.addEventListener('dragleave', () => item.classList.remove('bg-surface-container-low'));
+    item.addEventListener('drop', (e) => { e.preventDefault(); item.classList.remove('bg-surface-container-low'); if (draggedName && draggedName !== name) { movePanelInOrder(draggedName, name); renderDropdownList(); } });
+    c.appendChild(item);
+  });
+};
+const resetPanelWidths = () => {
+  const grid = document.getElementById('main-grid');
+  if (!grid) return;
+  const visible = Array.from(grid.children).filter(w => w.style.display !== 'none');
+  const n = visible.length;
+  if (!n) return;
+  const eq = (100 / n).toFixed(4) + '%';
+  visible.forEach((w, i) => { if (i < n - 1) w.dataset.width = eq; else delete w.dataset.width; });
+  updateGridLayout();
+};
+const spawnTemplatePanel = (name) => {
+  const grid = document.getElementById('main-grid');
+  const tpl = document.getElementById('panel-template');
+  if (!grid || !tpl) return;
+  const clone = tpl.cloneNode(true);
+  clone.id = `panel-${name}`;
+  clone.className = 'flex-1 flex flex-col bg-surface-container-lowest overflow-hidden h-full border-r border-border-subtle';
+  clone.setAttribute('data-purpose', 'template-panel');
+  const panelNum = name.replace('panel', '');
+  clone.querySelector('.template-top span').textContent = `Template - Panel ${panelNum} - Section Top`;
+  const mainEl = clone.querySelector('.template-main');
+  mainEl.id = `main-content-${name}`;
+  mainEl.innerHTML = `<p class="text-sm text-on-surface-variant">Template - Panel ${panelNum} - Section Content</p>`;
+  const bottomSpan = clone.querySelector('.template-bottom span');
+  if (bottomSpan) bottomSpan.textContent = `Template - Panel ${panelNum} - Section Bottom`;
+  const closeBtn = clone.querySelector('.template-top button');
+  if (closeBtn) closeBtn.setAttribute('onclick', `togglePanelVisibility('${name}', false)`);
+  const wrapper = document.createElement('div');
+  wrapper.className = 'h-full relative flex flex-row overflow-hidden min-w-0';
+  wrapper.setAttribute('data-panel', name);
+  wrapper.appendChild(clone);
+  const resizer = document.createElement('div');
+  resizer.setAttribute('data-panel-resizer', '');
+  resizer.className = 'shrink-0';
+  wrapper.appendChild(resizer);
+  grid.appendChild(wrapper);
+  syncPanelOrderFromDOM();
+  updateGridLayout();
+  renderDropdownList();
+};
+
+// ============ EXPORTS ============
+Object.assign(window, {
+  togglePanelVisibility, resetPanelWidths, spawnTemplatePanel, renderDropdownList,
+  openSidebar, closeSidebar, openArchivePopup, closeArchivePopup,
+  restoreProject, deleteProject, deleteAllProjects
+});
+
+// ============ INIT ============
+const initApp = () => {
+  wrapAndInitResizers();
+  ['panel1','panel2','panel3','panel4'].forEach(n => spawnTemplatePanel(n));
+  initResizers();
+  renderSidebar();
+  renderArchiveList();
+};
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initApp);
+else initApp();
+</script>
+</body>
+</html>

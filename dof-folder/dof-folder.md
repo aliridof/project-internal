@@ -1,0 +1,48 @@
+# dof-folder
+
+```
+📁 root/
+│
+├── 📁 0-backup/
+│   ├── 📱 Device/
+│   ├── 💾 Drive/
+│   ├── 📂 Folder/
+│   └── 🔀 Git/
+│
+├── 📁 1-data/
+│   ├── ⚙️ 0-meta/
+│   └── 👤 1-forma/
+│
+├── 📁 2-project/
+│   ├── 🏠 0-internal/
+│   │   └── 🏷️ label/
+│   │       ├── 📥 0-input/
+│   │       │   └── 🧱 raw N/
+│   │       ├── 🔄 1-process/
+│   │       │   └── 🔁 rev N/
+│   │       └── 📤 2-output/
+│   │           └── ✅ ver N/
+│   │
+│   └── 🌐 1-external/
+│       └── 🏷️ label/
+│           ├── 📥 0-input/
+│           │   └── 🧱 raw N/
+│           ├── 🔄 1-process/
+│           │   └── 🔁 rev N/
+│           └── 📤 2-output/
+│               └── ✅ ver N/
+│
+├── 📁 3-compressed/
+│
+├── 📁 4-software/
+│   ├── ⚙️ meta/
+│   └── 👤 forma/
+│
+├── 📁 5-document/
+│
+└── 📁 6-media/
+    ├── 🎵 audio/
+    └── 🎬 visual/
+        ├── 🖼️ image/
+        └── 🎞️ motion/
+```
