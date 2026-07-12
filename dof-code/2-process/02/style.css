@@ -1,0 +1,94 @@
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f8f8f8;
+  color: #171717;
+}
+.code-font {
+  font-family: 'JetBrains Mono', monospace;
+}
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e5e5e5; border-radius: 10px; }
+.ide-shadow { box-shadow: 0 10px 50px rgba(0, 0, 0, 0.05); }
+
+/* ITEM 1: Opsi A - IDE container height responsive (dvh) */
+[data-purpose="ide-container"] {
+  height: min(860px, calc(100dvh - 2rem));
+}
+@media (max-width: 767px) {
+  [data-purpose="ide-container"] {
+    height: min(860px, calc(100dvh - 1rem));
+  }
+}
+
+/* Syntax Highlighting Tokens */
+.token-comment { color: #71717a; font-style: italic; }
+.token-tag { color: #ea580c; font-weight: 600; }
+.token-attr { color: #2563eb; font-weight: 500; }
+.token-string { color: #16a34a; }
+.token-operator { color: #4b5563; font-weight: 500; }
+
+/* Panel & Resizer (single source of truth) */
+[data-panel] { position: relative; }
+[data-panel-resizer] {
+  width: 6px;
+  cursor: col-resize;
+  z-index: 40;
+  background-color: transparent;
+  transition: background-color 0.2s;
+}
+[data-panel-resizer]:hover { background-color: #cbd5e1; }
+
+#panel-journal, #panel-explorer, #panel-editor { border-right: 1px solid #f3f4f6; }
+
+/* Editor overlay sync - ITEM 2 */
+#editor-input, #editor-highlight {
+  font-family: 'JetBrains Mono', monospace;
+  tab-size: 2;
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  max-width: 100%;
+}
+#editor-input { overflow-x: hidden; }
+
+/* min-height:0 agar flex child bisa scroll tanpa bocor ke window */
+.journal-main, .explorer-main, .editor-content, .preview-content, #journal-history {
+  min-height: 0;
+}
+
+/* BUG 5 FIX: Template scroll sekarang class-based (bukan data-purpose lock) */
+.template-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.template-top, .template-bottom {
+  flex-shrink: 0;
+}
+
+/* Mobile: horizontal scroll with snap (BUG 4: 100% no peek) */
+@media (max-width: 1024px) {
+  html, body { height: 100dvh; overflow: hidden; }
+  #main-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scroll-padding: 0;
+  }
+  #main-grid > [data-panel] {
+    min-width: 100%;
+    max-width: 100%;
+    width: 100%;          /* ⬅ full container, no peek */
+    flex-shrink: 0;
+    overflow: hidden;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;   /* ⬅ cegah lompat panel saat swipe */
+    border-right: none;
+  }
+  [data-panel-resizer] { display: none !important; }
+}

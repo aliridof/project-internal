@@ -1,0 +1,65 @@
+body { font-family: 'Inter', sans-serif; }
+.code-font { font-family: 'Fira Code', monospace; }
+/* Scrollbar kustom estetis */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+div:nth-of-type(2) > main:nth-of-type(1) > header:nth-of-type(1) > div:nth-of-type(1) > button:nth-of-type(1) > span:nth-of-type(1) {
+    font-size: 18px;
+    line-height: 18px;
+    color: #94a3b8;
+}
+div:nth-of-type(2) > main:nth-of-type(1) > header:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > button#toggle-preview:nth-of-type(1) {
+    font-weight: normal;
+}
+div:nth-of-type(2) > main:nth-of-type(1) > header:nth-of-type(1) > div:nth-of-type(1) > div:nth-of-type(1) > button#toggle-code:nth-of-type(2) {
+    font-weight: normal;
+}
+div:nth-of-type(2) > aside#main-sidebar:nth-of-type(2) > header:nth-of-type(1) > div:nth-of-type(1) > button#tab-btn-context:nth-of-type(1) > span:nth-of-type(2) {
+    font-weight: normal;
+}
+div:nth-of-type(2) > aside#main-sidebar:nth-of-type(2) > header:nth-of-type(1) > div:nth-of-type(1) > button#tab-btn-chat:nth-of-type(2) > span:nth-of-type(2) {
+    font-weight: normal;
+}
+div:nth-of-type(2) > aside#main-sidebar:nth-of-type(2) > header:nth-of-type(1) > div:nth-of-type(1) > button#tab-btn-history:nth-of-type(3) > span:nth-of-type(2) {
+    font-weight: normal;
+}
+
+/* Sidebar toggle states */
+#left-mini-sidebar.w-16 .sidebar-expanded-only {
+    display: none !important;
+}
+#left-mini-sidebar.w-72 .sidebar-collapsed-only {
+    display: none !important;
+}
+
+/* Header adjustments when collapsed */
+#left-mini-sidebar.w-16 header {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+#left-mini-sidebar.w-16 #left-sidebar-expand-btn {
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+/* Bottom Bar adjustments when collapsed */
+#left-mini-sidebar.w-16 .sidebar-bottom-container {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    justify-content: center !important;
+}
+
+/* User targeted selectors for customization */
+div:nth-of-type(2) > aside#left-mini-sidebar:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > button#tab-btn-context-expanded:nth-of-type(1) {
+    /* Styles for settings button */
+}
+
+div:nth-of-type(2) > aside#main-sidebar:nth-of-type(2) > header:nth-of-type(1) > div:nth-of-type(1) {
+    /* Styles for main sidebar header tab list */
+}
+
+
