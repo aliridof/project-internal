@@ -1,0 +1,70 @@
+* { box-sizing: border-box; }
+body { overflow: hidden; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c4c4c4; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
+
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+.sidebar-item { transition: background 0.1s; }
+.sidebar-item:hover { background: rgba(0,0,0,0.04); }
+.sidebar-item.active { background: rgba(0,0,0,0.06); font-weight: 600; }
+
+.file-item { transition: background 0.1s, box-shadow 0.1s; }
+.file-item:hover { background: rgba(0,0,0,0.03); }
+.file-item.selected { background: #e8f0fe; }
+.file-item.selected:hover { background: #d2e3fc; }
+
+.grid-item { border-radius: 8px; }
+.grid-item:hover { background: rgba(0,0,0,0.03); box-shadow: 0 0 0 1px rgba(0,0,0,0.05); }
+.grid-item.selected { background: #e8f0fe; box-shadow: 0 0 0 1px #a8c7fa; }
+.grid-item.selected:hover { background: #d2e3fc; }
+
+.toolbar-btn { transition: background 0.1s; border-radius: 6px; }
+.toolbar-btn:hover { background: rgba(0,0,0,0.05); }
+.toolbar-btn:active { background: rgba(0,0,0,0.08); }
+.toolbar-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+.ctx-menu { animation: ctxIn 0.12s ease-out; }
+@keyframes ctxIn { from { opacity:0; transform: scale(0.96); } to { opacity:1; transform: scale(1); } }
+
+.toast-anim { animation: toastIn 0.25s ease-out, toastOut 0.25s ease-in 2s forwards; }
+@keyframes toastIn { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; transform: translateY(-8px); } }
+
+.rename-input { outline: 2px solid #0078d4; outline-offset: -1px; border-radius: 4px; }
+
+.nav-breadcrumb { transition: background 0.1s; border-radius: 4px; padding: 2px 8px; }
+.nav-breadcrumb:hover { background: rgba(0,0,0,0.04); }
+
+.dropdown-menu { animation: ctxIn 0.12s ease-out; }
+
+.sidebar-section-title { font-size: 11px; font-weight: 600; color: #616161; letter-spacing: 0.02em; text-transform: uppercase; padding: 16px 16px 4px 16px; }
+
+.canvas-item { 
+  width: 100px; 
+  height: 105px; 
+  border-radius: 8px; 
+  user-select: none;
+  z-index: 5;
+}
+.canvas-item:hover { 
+  background: rgba(0,0,0,0.03); 
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.05); 
+}
+.canvas-item.selected { 
+  background: #e8f0fe; 
+  box-shadow: 0 0 0 1px #a8c7fa; 
+  z-index: 10;
+}
+.canvas-item.selected:hover { 
+  background: #d2e3fc; 
+}
+.canvas-item.dragging {
+  opacity: 0.82;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+  z-index: 100;
+  cursor: grabbing;
+}

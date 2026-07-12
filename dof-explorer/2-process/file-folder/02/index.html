@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>File Explorer</title>
+<meta name="description" content="Windows 11 File Explorer" />
+<link rel="icon" href="/logo-icon.png" media="(prefers-color-scheme: light)" />
+<link rel="icon" href="/logo-icon.png" media="(prefers-color-scheme: dark)" />
+<link rel="apple-touch-icon" href="/logo-icon-ios.png" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['"Segoe UI"', '"Inter"', 'system-ui', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="h-screen flex flex-col bg-[#f3f3f3] font-sans text-[#1a1a1a] select-none">
+
+<!-- Title / Tab Bar -->
+<div class="flex items-center h-11 bg-[#f3f3f3] pl-3 pr-2 shrink-0 border-b border-[#e5e5e5] gap-1 relative select-none">
+  <!-- Windows Explorer Icon Container -->
+  <div class="flex items-center gap-1 mr-2 shrink-0">
+  </div>
+  
+  <!-- Tabs List Container -->
+  <div class="flex items-end h-full flex-1 overflow-x-auto overflow-y-hidden gap-1 scrollbar-none" id="tabContainer">
+    <!-- Tabs will be rendered here dynamically -->
+  </div>
+
+  <!-- Add Tab Button -->
+  <button class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-black/10 text-lg text-[#555] shrink-0 transition-colors" onclick="addNewTab()" title="Tab Baru (Ctrl+T)">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>
+  </button>
+</div>
+
+<!-- Toolbar -->
+<div class="flex items-center h-12 bg-[#f9f9f9] px-2 shrink-0 border-b border-[#e5e5e5] gap-0.5">
+  <!-- Navigation -->
+  <button class="toolbar-btn w-9 h-9 flex items-center justify-center" id="btnBack" onclick="goBack()" title="Kembali">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <button class="toolbar-btn w-9 h-9 flex items-center justify-center" id="btnForward" onclick="goForward()" title="Maju">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+  <button class="toolbar-btn w-9 h-9 flex items-center justify-center" id="btnUp" onclick="goUp()" title="Naik">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
+  </button>
+
+  <!-- Address Bar -->
+  <div class="flex-1 mx-2 flex items-center h-9 bg-white border border-[#e0e0e0] rounded-md px-1 min-w-0" id="addressBarContainer">
+    <div class="flex items-center min-w-0 flex-1 overflow-hidden" id="breadcrumbNav"></div>
+    <input type="text" id="addressInput" class="hidden w-full h-full text-sm px-2 outline-none bg-transparent" onkeydown="if(event.key==='Enter')navigateToPath(this.value); if(event.key==='Escape')hideAddressInput();" onblur="hideAddressInput()"/>
+  </div>
+
+  <!-- Search -->
+  <div class="relative" id="searchContainer">
+    <div class="flex items-center h-9 bg-white border border-[#e0e0e0] rounded-md px-3 w-56" id="searchBar">
+      <svg class="w-4 h-4 text-[#888] mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-width="2" stroke-linecap="round"/></svg>
+      <input type="text" id="searchInput" placeholder="Cari" class="w-full text-sm outline-none bg-transparent" oninput="handleSearch(this.value)"/>
+    </div>
+  </div>
+
+  <!-- View Toggle -->
+  <div class="flex items-center bg-white border border-[#e0e0e0] rounded-md overflow-hidden ml-1 shrink-0">
+    <button class="h-8 w-9 flex items-center justify-center hover:bg-black/5" id="btnCanvasView" onclick="setView('canvas')" title="Tampilan Canvas">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+    </button>
+    <button class="h-8 w-9 flex items-center justify-center hover:bg-black/5" id="btnListView" onclick="setView('list')" title="Tampilan Detail">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10.5" width="18" height="3" rx="1"/><rect x="3" y="17" width="18" height="3" rx="1"/></svg>
+    </button>
+  </div>
+</div>
+
+
+
+<!-- Main Area -->
+<div class="flex flex-1 min-h-0">
+  <!-- Sidebar -->
+  <div class="w-52 shrink-0 bg-[#f9f9f9] border-r border-[#e5e5e5] overflow-y-auto py-1" id="sidebarContainer">
+  </div>
+
+  <!-- File Content -->
+  <div class="flex-1 flex flex-col min-w-0 bg-white">
+    <!-- Column Headers for List View -->
+    <div class="hidden shrink-0 border-b border-[#e5e5e5] text-xs text-[#666] font-medium px-4 py-2 flex items-center" id="listHeaders">
+      <div class="w-8 mr-2"></div>
+      <div class="flex-1 cursor-pointer hover:text-[#1a1a1a]" onclick="setSort('name')">Nama <span id="sortNameIndicator"></span></div>
+      <div class="w-32 cursor-pointer hover:text-[#1a1a1a]" onclick="setSort('dateModified')">Tanggal Diubah <span id="sortDateIndicator"></span></div>
+      <div class="w-28 cursor-pointer hover:text-[#1a1a1a]" onclick="setSort('category')">Kategori <span id="sortCategoryIndicator"></span></div>
+      <div class="w-16 cursor-pointer hover:text-[#1a1a1a]" onclick="setSort('extension')">Ekstensi <span id="sortExtensionIndicator"></span></div>
+      <div class="w-24 text-right cursor-pointer hover:text-[#1a1a1a]" onclick="setSort('size')">Ukuran <span id="sortSizeIndicator"></span></div>
+    </div>
+    <!-- File Grid/List -->
+    <div class="flex-1 overflow-y-auto p-4" id="fileContainer" oncontextmenu="showContextMenu(event)" onclick="handleContainerClick(event)"></div>
+    <!-- Status Bar -->
+    <div class="h-7 shrink-0 border-t border-[#e5e5e5] flex items-center px-4 text-xs text-[#888]" id="statusBar">
+      <span id="statusText">Siap</span>
+    </div>
+  </div>
+</div>
+
+<!-- Context Menu -->
+<div class="hidden fixed z-50 bg-white border border-[#e0e0e0] rounded-lg shadow-xl py-1.5 min-w-[200px] ctx-menu" id="contextMenu"></div>
+
+<!-- New Item Menu -->
+<div class="hidden fixed z-50 bg-white border border-[#e0e0e0] rounded-lg shadow-xl py-1.5 min-w-[180px] ctx-menu" id="newItemMenu"></div>
+
+<!-- Sort Menu -->
+<div class="hidden fixed z-50 bg-white border border-[#e0e0e0] rounded-lg shadow-xl py-1.5 min-w-[180px] ctx-menu" id="sortMenu"></div>
+
+<!-- Toast Container -->
+<div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2" id="toastContainer"></div>
+
+<script type="module" src="/app.js"></script>
+</body>
+</html>

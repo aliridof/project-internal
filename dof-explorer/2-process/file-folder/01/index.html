@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>File Explorer</title>
+<meta name="description" content="Windows 11 File Explorer" />
+<link rel="icon" href="/logo-icon.png" media="(prefers-color-scheme: light)" />
+<link rel="icon" href="/logo-icon.png" media="(prefers-color-scheme: dark)" />
+<link rel="apple-touch-icon" href="/logo-icon-ios.png" />
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['"Segoe UI"', '"Inter"', 'system-ui', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+<style>
+* { box-sizing: border-box; }
+body { overflow: hidden; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #c4c4c4; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #a0a0a0; }
+
+.sidebar-item { transition: background 0.1s; }
+.sidebar-item:hover { background: rgba(0,0,0,0.04); }
+.sidebar-item.active { background: rgba(0,0,0,0.06); font-weight: 600; }
+
+.file-item { transition: background 0.1s, box-shadow 0.1s; }
+.file-item:hover { background: rgba(0,0,0,0.03); }
+.file-item.selected { background: #e8f0fe; }
+.file-item.selected:hover { background: #d2e3fc; }
+
+.grid-item { border-radius: 8px; }
+.grid-item:hover { background: rgba(0,0,0,0.03); box-shadow: 0 0 0 1px rgba(0,0,0,0.05); }
+.grid-item.selected { background: #e8f0fe; box-shadow: 0 0 0 1px #a8c7fa; }
+.grid-item.selected:hover { background: #d2e3fc; }
+
+.toolbar-btn { transition: background 0.1s; border-radius: 6px; }
+.toolbar-btn:hover { background: rgba(0,0,0,0.05); }
+.toolbar-btn:active { background: rgba(0,0,0,0.08); }
+.toolbar-btn.disabled { opacity: 0.4; pointer-events: none; }
+
+.ctx-menu { animation: ctxIn 0.12s ease-out; }
+@keyframes ctxIn { from { opacity:0; transform: scale(0.96); } to { opacity:1; transform: scale(1); } }
+
+.toast-anim { animation: toastIn 0.25s ease-out, toastOut 0.25s ease-in 2s forwards; }
+@keyframes toastIn { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform: translateY(0); } }
+@keyframes toastOut { from { opacity:1; } to { opacity:0; transform: translateY(-8px); } }
+
+.rename-input { outline: 2px solid #0078d4; outline-offset: -1px; border-radius: 4px; }
+
+.nav-breadcrumb { transition: background 0.1s; border-radius: 4px; padding: 2px 8px; }
+.nav-breadcrumb:hover { background: rgba(0,0,0,0.04); }
+
+.dropdown-menu { animation: ctxIn 0.12s ease-out; }
+
+.sidebar-section-title { font-size: 11px; font-weight: 600; color: #616161; letter-spacing: 0.02em; text-transform: uppercase; padding: 16px 16px 4px 16px; }
+</style>
+</head>
+<body class="h-screen flex flex-col bg-[#f3f3f3] font-sans text-[#1a1a1a] select-none">
+
+<!-- Title Bar -->
+<div class="flex items-center h-10 bg-[#f3f3f3] px-3 shrink-0 border-b border-[#e5e5e5]">
+  <div class="flex items-center gap-1 mr-4">
+    <svg class="w-5 h-5 text-[#0078d4]" viewBox="0 0 24 24" fill="currentColor"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+  </div>
+  <div class="flex-1 text-center text-xs text-[#666]" id="titleText">File Explorer</div>
+  <div class="flex items-center gap-1">
+    <button class="w-8 h-8 flex items-center justify-center rounded hover:bg-black/5" onclick="toggleSearch()">
+      <svg class="w-4 h-4 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div class="flex items-center h-12 bg-[#f9f9f9] px-2 shrink-0 border-b border-[#e5e5e5] gap-0.5">
+  <!-- Navigation -->
+  <button class="toolbar-btn w-9 h-9 flex items-center justify-center" id="btnBack" onclick="goBack()" title="Kembali">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <button class="toolbar-btn w-9 h-9 flex items-center justify-center" id="btnForward" onclick="goForward()" title="Maju">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+  <button class="toolbar-btn w-9 h-9 flex items-center justify-center" id="btnUp" onclick="goUp()" title="Naik">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
+  </button>
+
+  <!-- Address Bar -->
+  <div class="flex-1 mx-2 flex items-center h-9 bg-white border border-[#e0e0e0] rounded-md px-1 min-w-0" id="addressBarContainer">
+    <div class="flex items-center min-w-0 flex-1 overflow-hidden" id="breadcrumbNav"></div>
+    <input type="text" id="addressInput" class="hidden w-full h-full text-sm px-2 outline-none bg-transparent" onkeydown="if(event.key==='Enter')navigateToPath(this.value); if(event.key==='Escape')hideAddressInput();" onblur="hideAddressInput()"/>
+  </div>
+
+  <!-- Search -->
+  <div class="relative" id="searchContainer">
+    <div class="flex items-center h-9 bg-white border border-[#e0e0e0] rounded-md px-3 w-56" id="searchBar">
+      <svg class="w-4 h-4 text-[#888] mr-2 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke-width="2" stroke-linecap="round"/></svg>
+      <input type="text" id="searchInput" placeholder="Cari" class="w-full text-sm outline-none bg-transparent" oninput="handleSearch(this.value)"/>
+    </div>
+  </div>
+</div>
+
+<!-- Command Bar -->
+<div class="flex items-center h-10 bg-[#f9f9f9] px-3 shrink-0 border-b border-[#e5e5e5] gap-1">
+  <button class="toolbar-btn h-8 px-3 flex items-center gap-2 text-[13px]" onclick="showNewItemMenu(event)">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>
+    Baru
+  </button>
+  <div class="w-px h-5 bg-[#d0d0d0] mx-1"></div>
+  <button class="toolbar-btn h-8 px-3 flex items-center gap-2 text-[13px]" id="btnCut" onclick="cutItem()">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>
+    Potong
+  </button>
+  <button class="toolbar-btn h-8 px-3 flex items-center gap-2 text-[13px]" id="btnCopy" onclick="copyItem()">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    Salin
+  </button>
+  <button class="toolbar-btn h-8 px-3 flex items-center gap-2 text-[13px]" id="btnPaste" onclick="pasteItem()">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+    Tempel
+  </button>
+  <button class="toolbar-btn h-8 px-3 flex items-center gap-2 text-[13px]" id="btnRename" onclick="startRename()">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+    Ganti Nama
+  </button>
+  <button class="toolbar-btn h-8 px-3 flex items-center gap-2 text-[13px]" id="btnDelete" onclick="deleteItem()">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+    Hapus
+  </button>
+  <div class="flex-1"></div>
+  <!-- View Toggle -->
+  <div class="flex items-center bg-white border border-[#e0e0e0] rounded-md overflow-hidden">
+    <button class="h-8 w-9 flex items-center justify-center hover:bg-black/5" id="btnGridView" onclick="setView('grid')" title="Tampilan Ikon Besar">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>
+    </button>
+    <button class="h-8 w-9 flex items-center justify-center hover:bg-black/5" id="btnListView" onclick="setView('list')" title="Tampilan Detail">
+      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="3" rx="1"/><rect x="3" y="10.5" width="18" height="3" rx="1"/><rect x="3" y="17" width="18" height="3" rx="1"/></svg>
+    </button>
+  </div>
+  <!-- Sort -->
+  <button class="toolbar-btn h-8 px-3 flex items-center gap-2 text-[13px] relative" onclick="toggleSortMenu(event)">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 6h18M3 12h12M3 18h6"/></svg>
+    Urutkan
+  </button>
+</div>
+
+<!-- Main Area -->
+<div class="flex flex-1 min-h-0">
+  <!-- Sidebar -->
+  <div class="w-52 shrink-0 bg-[#f9f9f9] border-r border-[#e5e5e5] overflow-y-auto py-1">
+    <!-- Quick Access -->
+    <div class="sidebar-section-title">Akses Cepat</div>
+    <div id="sidebarQuickAccess"></div>
+
+    <!-- This PC -->
+    <div class="sidebar-section-title">PC Ini</div>
+    <div id="sidebarThisPC"></div>
+  </div>
+
+  <!-- File Content -->
+  <div class="flex-1 flex flex-col min-w-0 bg-white">
+    <!-- Column Headers for List View -->
+    <div class="hidden shrink-0 border-b border-[#e5e5e5] text-xs text-[#666] font-medium px-4 py-2 flex items-center" id="listHeaders">
+      <div class="w-8 mr-2"></div>
+      <div class="flex-1 cursor-pointer hover:text-[#1a1a1a]" onclick="setSort('name')">Nama <span id="sortNameIndicator"></span></div>
+      <div class="w-32 cursor-pointer hover:text-[#1a1a1a]" onclick="setSort('dateModified')">Tanggal Diubah <span id="sortDateIndicator"></span></div>
+      <div class="w-20 cursor-pointer hover:text-[#1a1a1a]" onclick="setSort('type')">Tipe <span id="sortTypeIndicator"></span></div>
+      <div class="w-24 text-right cursor-pointer hover:text-[#1a1a1a]" onclick="setSort('size')">Ukuran <span id="sortSizeIndicator"></span></div>
+    </div>
+    <!-- File Grid/List -->
+    <div class="flex-1 overflow-y-auto p-4" id="fileContainer" oncontextmenu="showContextMenu(event)" onclick="handleContainerClick(event)"></div>
+    <!-- Status Bar -->
+    <div class="h-7 shrink-0 border-t border-[#e5e5e5] flex items-center px-4 text-xs text-[#888]" id="statusBar">
+      <span id="statusText">Siap</span>
+    </div>
+  </div>
+</div>
+
+<!-- Context Menu -->
+<div class="hidden fixed z-50 bg-white border border-[#e0e0e0] rounded-lg shadow-xl py-1.5 min-w-[200px] ctx-menu" id="contextMenu"></div>
+
+<!-- New Item Menu -->
+<div class="hidden fixed z-50 bg-white border border-[#e0e0e0] rounded-lg shadow-xl py-1.5 min-w-[180px] ctx-menu" id="newItemMenu"></div>
+
+<!-- Sort Menu -->
+<div class="hidden fixed z-50 bg-white border border-[#e0e0e0] rounded-lg shadow-xl py-1.5 min-w-[180px] ctx-menu" id="sortMenu"></div>
+
+<!-- Toast Container -->
+<div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2" id="toastContainer"></div>
+
+<script>
+// ===== FILE SYSTEM DATA =====
+const FILE_SYSTEM = {
+  'PC Ini': {
+    type: 'folder', children: {
+      'Desktop': {
+        type: 'folder', children: {
+          'Proyek Website': { type: 'folder', children: {
+            'index.html': { type: 'file', ext: 'html', size: 24576, dateModified: '2024-12-15T10:30:00' },
+            'style.css': { type: 'file', ext: 'css', size: 8192, dateModified: '2024-12-15T10:30:00' },
+            'app.js': { type: 'file', ext: 'js', size: 16384, dateModified: '2024-12-14T16:20:00' },
+            'package.json': { type: 'file', ext: 'json', size: 1024, dateModified: '2024-12-10T09:00:00' },
+            'README.md': { type: 'file', ext: 'md', size: 4096, dateModified: '2024-12-12T14:00:00' },
+          }},
+          'Catatan Rapat.txt': { type: 'file', ext: 'txt', size: 2048, dateModified: '2024-12-18T09:15:00' },
+          'Shortcut Chrome.lnk': { type: 'file', ext: 'lnk', size: 512, dateModified: '2024-11-01T08:00:00' },
+        }
+      },
+      'Dokumen': {
+        type: 'folder', children: {
+          'Laporan Tahunan 2024.docx': { type: 'file', ext: 'docx', size: 524288, dateModified: '2024-12-01T11:00:00' },
+          'Presentasi Q4.pptx': { type: 'file', ext: 'pptx', size: 3145728, dateModified: '2024-11-28T14:30:00' },
+          'Data Keuangan.xlsx': { type: 'file', ext: 'xlsx', size: 1048576, dateModified: '2024-12-10T16:45:00' },
+          'Surat Resmi.pdf': { type: 'file', ext: 'pdf', size: 262144, dateModified: '2024-12-05T10:20:00' },
+          'Catatan Pribadi': { type: 'folder', children: {
+            'diary.txt': { type: 'file', ext: 'txt', size: 15360, dateModified: '2024-12-20T22:00:00' },
+            'ide-kerja.txt': { type: 'file', ext: 'txt', size: 4096, dateModified: '2024-12-19T08:30:00' },
+          }},
+          'Proposal Proyek.pdf': { type: 'file', ext: 'pdf', size: 1572864, dateModified: '2024-12-08T13:00:00' },
+        }
+      },
+      'Unduhan': {
+        type: 'folder', children: {
+          'setup-vscode.exe': { type: 'file', ext: 'exe', size: 89128960, dateModified: '2024-12-15T08:00:00' },
+          'node-v20.10.0.msi': { type: 'file', ext: 'msi', size: 31457280, dateModified: '2024-12-14T12:00:00' },
+          'wallpaper-nature.jpg': { type: 'file', ext: 'jpg', size: 4194304, dateModified: '2024-12-16T15:00:00' },
+          'ebook-programming.pdf': { type: 'file', ext: 'pdf', size: 8388608, dateModified: '2024-12-13T19:30:00' },
+          'font-pack.zip': { type: 'file', ext: 'zip', size: 15728640, dateModified: '2024-12-12T10:00:00' },
+          'video-tutorial.mp4': { type: 'file', ext: 'mp4', size: 157286400, dateModified: '2024-12-11T20:00:00' },
+          'music-ambient.mp3': { type: 'file', ext: 'mp3', size: 7340032, dateModified: '2024-12-10T18:00:00' },
+        }
+      },
+      'Gambar': {
+        type: 'folder', children: {
+          'Foto Liburan': { type: 'folder', children: {
+            'IMG_20241201_001.jpg': { type: 'file', ext: 'jpg', size: 5242880, dateModified: '2024-12-01T12:00:00' },
+            'IMG_20241201_002.jpg': { type: 'file', ext: 'jpg', size: 4823449, dateModified: '2024-12-01T12:05:00' },
+            'IMG_20241202_003.jpg': { type: 'file', ext: 'jpg', size: 5505024, dateModified: '2024-12-02T14:30:00' },
+            'panorama-beach.png': { type: 'file', ext: 'png', size: 12582912, dateModified: '2024-12-03T09:00:00' },
+          }},
+          'Screenshot': { type: 'folder', children: {
+            'screenshot-2024-12-10.png': { type: 'file', ext: 'png', size: 1048576, dateModified: '2024-12-10T11:00:00' },
+            'screenshot-2024-12-15.png': { type: 'file', ext: 'png', size: 921600, dateModified: '2024-12-15T16:30:00' },
+            'screenshot-2024-12-18.png': { type: 'file', ext: 'png', size: 1105920, dateModified: '2024-12-18T09:45:00' },
+          }},
+          'logo-perusahaan.png': { type: 'file', ext: 'png', size: 262144, dateModified: '2024-11-15T10:00:00' },
+          'banner-web.svg': { type: 'file', ext: 'svg', size: 32768, dateModified: '2024-11-20T13:00:00' },
+          'avatar.png': { type: 'file', ext: 'png', size: 65536, dateModified: '2024-12-05T08:00:00' },
+        }
+      },
+      'Musik': {
+        type: 'folder', children: {
+          'Playlist Santai': { type: 'folder', children: {
+            'rain-sounds.mp3': { type: 'file', ext: 'mp3', size: 8388608, dateModified: '2024-11-10T20:00:00' },
+            'jazz-cafe.mp3': { type: 'file', ext: 'mp3', size: 6291456, dateModified: '2024-11-12T18:00:00' },
+            'lo-fi-beats.mp3': { type: 'file', ext: 'mp3', size: 7340032, dateModified: '2024-11-15T22:00:00' },
+          }},
+          'podcast-ep1.mp3': { type: 'file', ext: 'mp3', size: 52428800, dateModified: '2024-12-05T07:00:00' },
+          'audiobook-ch1.m4a': { type: 'file', ext: 'm4a', size: 31457280, dateModified: '2024-12-08T21:00:00' },
+        }
+      },
+      'Video': {
+        type: 'folder', children: {
+          'Rekaman Meeting': { type: 'folder', children: {
+            'meeting-2024-12-10.mp4': { type: 'file', ext: 'mp4', size: 209715200, dateModified: '2024-12-10T17:00:00' },
+            'meeting-2024-12-17.mp4': { type: 'file', ext: 'mp4', size: 262144000, dateModified: '2024-12-17T17:30:00' },
+          }},
+          'tutorial-css.mp4': { type: 'file', ext: 'mp4', size: 157286400, dateModified: '2024-12-01T10:00:00' },
+          'demo-product.mp4': { type: 'file', ext: 'mp4', size: 104857600, dateModified: '2024-11-25T14:00:00' },
+          'clip-lucu.webm': { type: 'file', ext: 'webm', size: 20971520, dateModified: '2024-12-15T20:00:00' },
+        }
+      },
+      'Drive C:': {
+        type: 'folder', children: {
+          'Windows': { type: 'folder', children: {
+            'System32': { type: 'folder', children: {
+              'cmd.exe': { type: 'file', ext: 'exe', size: 286720, dateModified: '2024-06-01T00:00:00' },
+              'notepad.exe': { type: 'file', ext: 'exe', size: 204800, dateModified: '2024-06-01T00:00:00' },
+            }},
+            'Fonts': { type: 'folder', children: {
+              'arial.ttf': { type: 'file', ext: 'ttf', size: 131072, dateModified: '2024-06-01T00:00:00' },
+              'consolas.ttf': { type: 'file', ext: 'ttf', size: 98304, dateModified: '2024-06-01T00:00:00' },
+              'segoeui.ttf': { type: 'file', ext: 'ttf', size: 262144, dateModified: '2024-06-01T00:00:00' },
+            }},
+          }},
+          'Program Files': { type: 'folder', children: {
+            'Microsoft VS Code': { type: 'folder', children: {
+              'Code.exe': { type: 'file', ext: 'exe', size: 104857600, dateModified: '2024-11-20T10:00:00' },
+              'resources': { type: 'folder', children: {} },
+            }},
+            'Google': { type: 'folder', children: {
+              'Chrome': { type: 'folder', children: {
+                'chrome.exe': { type: 'file', ext: 'exe', size: 2621440, dateModified: '2024-12-01T08:00:00' },
+              }},
+            }},
+          }},
+          'Users': { type: 'folder', children: {
+            'Pengguna': { type: 'folder', children: {} },
+          }},
+        }
+      },
+      'Drive D:': {
+        type: 'folder', children: {
+          'Game': { type: 'folder', children: {
+            'Steam': { type: 'folder', children: {
+              'steam.exe': { type: 'file', ext: 'exe', size: 1572864, dateModified: '2024-10-15T12:00:00' },
+            }},
+            'Epic Games': { type: 'folder', children: {} },
+          }},
+          'Backup': { type: 'folder', children: {
+            'backup-2024-12-01.zip': { type: 'file', ext: 'zip', size: 524288000, dateModified: '2024-12-01T23:00:00' },
+            'backup-2024-12-15.zip': { type: 'file', ext: 'zip', size: 629145600, dateModified: '2024-12-15T23:00:00' },
+          }},
+        }
+      },
+    }
+  }
+};
+
+// ===== STATE =====
+let currentPath = ['PC Ini', 'Desktop'];
+let historyStack = [['PC Ini', 'Desktop']];
+let historyIndex = 0;
+let selectedItems = new Set();
+let clipboard = { items: [], mode: null }; // mode: 'copy' | 'cut'
+let viewMode = 'grid';
+let sortBy = 'name';
+let sortDir = 'asc';
+let searchQuery = '';
+let renamingItem = null;
+
+// ===== ICON HELPERS =====
+function getFolderIcon() {
+  return `<svg class="w-12 h-12" viewBox="0 0 48 48" fill="none"><path d="M6 12C6 10.8954 6.89543 10 8 10H19L22 14H40C41.1046 14 42 14.8954 42 16V38C42 39.1046 41.1046 40 40 40H8C6.89543 40 6 39.1046 6 38V12Z" fill="#FFB300"/><path d="M6 16H42V38C42 39.1046 41.1046 40 40 40H8C6.89543 40 6 39.1046 6 38V16Z" fill="#FFCA28"/></svg>`;
+}
+
+function getFileIcon(ext) {
+  const colors = {
+    txt: ['#90A4AE','#78909C'], docx: ['#42A5F5','#1E88E5'], doc: ['#42A5F5','#1E88E5'],
+    xlsx: ['#66BB6A','#43A047'], xls: ['#66BB6A','#43A047'], csv: ['#66BB6A','#43A047'],
+    pptx: ['#FF7043','#F4511E'], ppt: ['#FF7043','#F4511E'],
+    pdf: ['#EF5350','#E53935'], jpg: ['#AB47BC','#8E24AA'], jpeg: ['#AB47BC','#8E24AA'],
+    png: ['#AB47BC','#8E24AA'], gif: ['#AB47BC','#8E24AA'], svg: ['#FFA726','#FB8C00'],
+    mp3: ['#EC407A','#D81B60'], m4a: ['#EC407A','#D81B60'], wav: ['#EC407A','#D81B60'],
+    mp4: ['#5C6BC0','#3949AB'], webm: ['#5C6BC0','#3949AB'], avi: ['#5C6BC0','#3949AB'],
+    mkv: ['#5C6BC0','#3949AB'], zip: ['#FFA726','#FB8C00'], rar: ['#FFA726','#FB8C00'],
+    '7z': ['#FFA726','#FB8C00'], exe: ['#78909C','#546E7A'], msi: ['#78909C','#546E7A'],
+    html: ['#FF7043','#F4511E'], css: ['#42A5F5','#1E88E5'], js: ['#FFEE58','#FDD835'],
+    json: ['#66BB6A','#43A047'], md: ['#42A5F5','#1E88E5'], ttf: ['#78909C','#546E7A'],
+    otf: ['#78909C','#546E7A'], woff: ['#78909C','#546E7A'], lnk: ['#42A5F5','#1E88E5'],
+  };
+  const c = colors[ext] || ['#BDBDBD','#9E9E9E'];
+  const label = ext ? ext.toUpperCase() : 'FILE';
+  return `<svg class="w-12 h-12" viewBox="0 0 48 48" fill="none">
+    <path d="M12 6C12 4.89543 12.8954 4 14 4H30L38 12V42C38 43.1046 37.1046 44 36 44H14C12.8954 44 12 43.1046 12 42V6Z" fill="${c[0]}"/>
+    <path d="M30 4L38 12H32C30.8954 12 30 11.1046 30 10V4Z" fill="${c[1]}" opacity="0.8"/>
+    <text x="25" y="34" text-anchor="middle" fill="white" font-size="8" font-weight="600" font-family="system-ui">${label}</text>
+  </svg>`;
+}
+
+function getSmallFolderIcon() {
+  return `<svg class="w-5 h-5" viewBox="0 0 20 20" fill="none"><path d="M2 5C2 4.44772 2.44772 4 3 4H7.5L9 6H17C17.5523 6 18 6.44772 18 7V16C18 16.5523 17.5523 17 17 17H3C2.44772 17 2 16.5523 2 16V5Z" fill="#FFB300"/><path d="M2 7H18V16C18 16.5523 17.5523 17 17 17H3C2.44772 17 2 16.5523 2 16V7Z" fill="#FFCA28"/></svg>`;
+}
+
+function getSmallFileIcon(ext) {
+  const c = ({
+    txt:'#78909C', docx:'#1E88E5', xlsx:'#43A047', pptx:'#F4511E', pdf:'#E53935',
+    jpg:'#8E24AA', png:'#8E24AA', svg:'#FB8C00', mp3:'#D81B60', mp4:'#3949AB',
+    zip:'#FB8C00', exe:'#546E7A', html:'#F4511E', css:'#1E88E5', js:'#FDD835',
+    json:'#43A047', md:'#1E88E5',
+  })[ext] || '#9E9E9E';
+  return `<svg class="w-5 h-5" viewBox="0 0 20 20"><path d="M5 2C5 1.44772 5.44772 1 6 1H13L17 5V18C17 18.5523 16.5523 19 16 19H6C5.44772 19 5 18.5523 5 18V2Z" fill="${c}"/><path d="M13 1L17 5H14C13.4477 5 13 4.55228 13 4V1Z" fill="${c}" opacity="0.7"/></svg>`;
+}
+
+// ===== FILE SYSTEM HELPERS =====
+function getNode(path) {
+  let node = FILE_SYSTEM;
+  for (const seg of path) {
+    if (node[seg]) {
+      node = node[seg].children || node[seg];
+    } else if (node.children && node.children[seg]) {
+      node = node.children[seg];
+    } else {
+      return null;
+    }
+  }
+  return node;
+}
+
+function getParentNode(path) {
+  if (path.length <= 1) return null;
+  return getNode(path.slice(0, -1));
+}
+
+function getCurrentFolder() {
+  const node = getNode(currentPath);
+  return node && node.children ? node.children : (node || {});
+}
+
+function getColumnType(ext) {
+  const types = {
+    'Folder': 'Folder file',
+    txt: 'Dokumen teks', docx: 'Dokumen Word', xlsx: 'Lembar kerja Excel',
+    pptx: 'Presentasi PowerPoint', pdf: 'Dokumen PDF', jpg: 'Gambar JPEG',
+    jpeg: 'Gambar JPEG', png: 'Gambar PNG', gif: 'Gambar GIF', svg: 'Gambar SVG',
+    mp3: 'File audio MP3', m4a: 'File audio M4A', mp4: 'File video MP4',
+    webm: 'File video WebM', zip: 'File terkompresi ZIP', rar: 'File terkompresi RAR',
+    exe: 'Aplikasi', msi: 'Penginstal Windows', html: 'Dokumen HTML',
+    css: 'Lembar gaya CSS', js: 'File JavaScript', json: 'File JSON',
+    md: 'Dokumen Markdown', ttf: 'Font TrueType', lnk: 'Pintasan',
+    csv: 'File CSV', avi: 'File video AVI', mkv: 'File video MKV',
+    '7z': 'File terkompresi 7Z', otf: 'Font OpenType', wav: 'File audio WAV',
+    woff: 'Font Web',
+  };
+  return types[ext] || 'File';
+}
+
+function formatSize(bytes) {
+  if (bytes === undefined || bytes === null) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+  return (bytes / 1073741824).toFixed(1) + ' GB';
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const day = String(d.getDate()).padStart(2,'0');
+  const month = String(d.getMonth()+1).padStart(2,'0');
+  const year = d.getFullYear();
+  const h = String(d.getHours()).padStart(2,'0');
+  const m = String(d.getMinutes()).padStart(2,'0');
+  return `${day}/${month}/${year} ${h}:${m}`;
+}
+
+// ===== RENDERING =====
+function render() {
+  renderBreadcrumb();
+  renderSidebar();
+  renderFiles();
+  updateToolbarState();
+  updateStatusBar();
+  updateViewButtons();
+  document.getElementById('titleText').textContent = currentPath[currentPath.length - 1] || 'File Explorer';
+}
+
+function renderBreadcrumb() {
+  const nav = document.getElementById('breadcrumbNav');
+  let html = '';
+  currentPath.forEach((seg, i) => {
+    if (i > 0) html += `<svg class="w-3 h-3 text-[#999] mx-1 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>`;
+    const isLast = i === currentPath.length - 1;
+    html += `<span class="nav-breadcrumb text-[13px] cursor-pointer whitespace-nowrap ${isLast ? 'font-semibold text-[#1a1a1a]' : 'text-[#555]'}" onclick="navigateTo(${i})">${seg}</span>`;
+  });
+  nav.innerHTML = html;
+}
+
+function renderSidebar() {
+  const qa = document.getElementById('sidebarQuickAccess');
+  const pc = document.getElementById('sidebarThisPC');
+  const quickPaths = [
+    { name: 'Desktop', path: ['PC Ini', 'Desktop'], icon: '🖥️' },
+    { name: 'Unduhan', path: ['PC Ini', 'Unduhan'], icon: '⬇️' },
+    { name: 'Dokumen', path: ['PC Ini', 'Dokumen'], icon: '📄' },
+    { name: 'Gambar', path: ['PC Ini', 'Gambar'], icon: '🖼️' },
+    { name: 'Musik', path: ['PC Ini', 'Musik'], icon: '🎵' },
+    { name: 'Video', path: ['PC Ini', 'Video'], icon: '🎬' },
+  ];
+  qa.innerHTML = quickPaths.map(p => {
+    const isActive = JSON.stringify(currentPath) === JSON.stringify(p.path);
+    return `<div class="sidebar-item flex items-center gap-3 px-4 py-1.5 cursor-pointer ${isActive ? 'active' : ''}" onclick="navigateToPathArray(${JSON.stringify(p.path).replace(/"/g, '&quot;')})">
+      <span class="text-sm">${p.icon}</span><span class="text-[13px] truncate">${p.name}</span></div>`;
+  }).join('');
+
+  const pcPaths = [
+    { name: 'Drive C:', path: ['PC Ini', 'Drive C:'], icon: '💾' },
+    { name: 'Drive D:', path: ['PC Ini', 'Drive D:'], icon: '💿' },
+  ];
+  pc.innerHTML = pcPaths.map(p => {
+    const isActive = JSON.stringify(currentPath) === JSON.stringify(p.path);
+    return `<div class="sidebar-item flex items-center gap-3 px-4 py-1.5 cursor-pointer ${isActive ? 'active' : ''}" onclick="navigateToPathArray(${JSON.stringify(p.path).replace(/"/g, '&quot;')})">
+      <span class="text-sm">${p.icon}</span><span class="text-[13px] truncate">${p.name}</span></div>`;
+  }).join('');
+}
+
+function getSortedItems(folder) {
+  const entries = Object.entries(folder);
+  const q = searchQuery.toLowerCase();
+  const filtered = q ? entries.filter(([name]) => name.toLowerCase().includes(q)) : entries;
+  
+  filtered.sort(([aName, aNode], [bName, bNode]) => {
+    const aIsFolder = aNode.type === 'folder';
+    const bIsFolder = bNode.type === 'folder';
+    if (aIsFolder && !bIsFolder) return -1;
+    if (!aIsFolder && bIsFolder) return 1;
+    
+    let cmp = 0;
+    if (sortBy === 'name') cmp = aName.localeCompare(bName);
+    else if (sortBy === 'dateModified') cmp = (aNode.dateModified || '').localeCompare(bNode.dateModified || '');
+    else if (sortBy === 'type') cmp = (aNode.ext || '').localeCompare(bNode.ext || '');
+    else if (sortBy === 'size') cmp = (aNode.size || 0) - (bNode.size || 0);
+    return sortDir === 'asc' ? cmp : -cmp;
+  });
+  return filtered;
+}
+
+function renderFiles() {
+  const container = document.getElementById('fileContainer');
+  const folder = getCurrentFolder();
+  const items = getSortedItems(folder);
+  const headers = document.getElementById('listHeaders');
+
+  if (items.length === 0) {
+    container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-[#999]">
+      <svg class="w-16 h-16 mb-3 text-[#ccc]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-width="1.5"/></svg>
+      <p class="text-sm">Folder ini kosong</p></div>`;
+    headers.style.display = 'none';
+    return;
+  }
+
+  if (viewMode === 'grid') {
+    headers.style.display = 'none';
+    container.innerHTML = `<div class="grid gap-1" style="grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));">${items.map(([name, node]) => {
+      const isSelected = selectedItems.has(name);
+      const icon = node.type === 'folder' ? getFolderIcon() : getFileIcon(node.ext);
+      const displayName = name.length > 20 ? name.substring(0, 18) + '…' : name;
+      return `<div class="grid-item p-2 flex flex-col items-center text-center cursor-pointer ${isSelected ? 'selected' : ''}" 
+        data-name="${escapeAttr(name)}" 
+        onclick="handleItemClick(event, '${escapeJS(name)}')" 
+        ondblclick="handleItemDblClick('${escapeJS(name)}')"
+        oncontextmenu="handleItemContext(event, '${escapeJS(name)}')">
+        <div class="mb-1 pointer-events-none">${icon}</div>
+        <div class="text-[12px] leading-tight w-full break-words line-clamp-2 pointer-events-none" title="${escapeAttr(name)}">${escapeHtml(displayName)}</div>
+      </div>`;
+    }).join('')}</div>`;
+  } else {
+    headers.style.display = 'flex';
+    container.innerHTML = `<div class="flex flex-col">${items.map(([name, node]) => {
+      const isSelected = selectedItems.has(name);
+      const icon = node.type === 'folder' ? getSmallFolderIcon() : getSmallFileIcon(node.ext);
+      const ext = node.type === 'folder' ? '' : (node.ext || '');
+      return `<div class="file-item flex items-center px-4 py-1.5 cursor-pointer border-b border-transparent ${isSelected ? 'selected' : ''}" 
+        data-name="${escapeAttr(name)}" 
+        onclick="handleItemClick(event, '${escapeJS(name)}')" 
+        ondblclick="handleItemDblClick('${escapeJS(name)}')"
+        oncontextmenu="handleItemContext(event, '${escapeJS(name)}')">
+        <div class="w-8 mr-2 flex items-center justify-center pointer-events-none">${icon}</div>
+        <div class="flex-1 text-[13px] truncate pointer-events-none" title="${escapeAttr(name)}">${escapeHtml(name)}</div>
+        <div class="w-32 text-[12px] text-[#888] pointer-events-none">${formatDate(node.dateModified)}</div>
+        <div class="w-20 text-[12px] text-[#888] pointer-events-none">${node.type === 'folder' ? 'Folder file' : getColumnType(ext)}</div>
+        <div class="w-24 text-right text-[12px] text-[#888] pointer-events-none">${node.type === 'folder' ? '' : formatSize(node.size)}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+}
+
+function escapeHtml(str) { return str.replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'&quot;'); }
+function escapeAttr(str) { return str.replace(/&/g,'&').replace(/"/g,'&quot;').replace(/</g,'<'); }
+function escapeJS(str) { return str.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+// ===== NAVIGATION =====
+function navigateTo(index) {
+  currentPath = currentPath.slice(0, index + 1);
+  pushHistory();
+  selectedItems.clear();
+  searchQuery = '';
+  document.getElementById('searchInput').value = '';
+  render();
+}
+
+function navigateToPathArray(pathArr) {
+  currentPath = [...pathArr];
+  pushHistory();
+  selectedItems.clear();
+  searchQuery = '';
+  document.getElementById('searchInput').value = '';
+  render();
+}
+
+function navigateToPath(pathStr) {
+  const parts = pathStr.split(/[/\\]/).filter(Boolean);
+  if (parts.length > 0) {
+    currentPath = parts;
+    pushHistory();
+    selectedItems.clear();
+    render();
+  }
+  hideAddressInput();
+}
+
+function goBack() {
+  if (historyIndex > 0) {
+    historyIndex--;
+    currentPath = [...historyStack[historyIndex]];
+    selectedItems.clear();
+    render();
+  }
+}
+
+function goForward() {
+  if (historyIndex < historyStack.length - 1) {
+    historyIndex++;
+    currentPath = [...historyStack[historyIndex]];
+    selectedItems.clear();
+    render();
+  }
+}
+
+function goUp() {
+  if (currentPath.length > 1) {
+    currentPath = currentPath.slice(0, -1);
+    pushHistory();
+    selectedItems.clear();
+    render();
+  }
+}
+
+function pushHistory() {
+  historyStack = historyStack.slice(0, historyIndex + 1);
+  historyStack.push([...currentPath]);
+  historyIndex = historyStack.length - 1;
+}
+
+// ===== SELECTION =====
+function handleItemClick(e, name) {
+  e.stopPropagation();
+  if (e.ctrlKey || e.metaKey) {
+    if (selectedItems.has(name)) selectedItems.delete(name);
+    else selectedItems.add(name);
+  } else {
+    selectedItems.clear();
+    selectedItems.add(name);
+  }
+  renderFiles();
+  updateToolbarState();
+  updateStatusBar();
+}
+
+function handleItemDblClick(name) {
+  const folder = getCurrentFolder();
+  const node = folder[name];
+  if (!node) return;
+  if (node.type === 'folder') {
+    currentPath.push(name);
+    pushHistory();
+    selectedItems.clear();
+    searchQuery = '';
+    document.getElementById('searchInput').value = '';
+    render();
+  } else {
+    showToast(`Membuka ${name}...`);
+  }
+}
+
+function handleContainerClick(e) {
+  if (e.target === document.getElementById('fileContainer') || e.target.closest('#fileContainer') === document.getElementById('fileContainer') && !e.target.closest('.grid-item, .file-item')) {
+    selectedItems.clear();
+    renderFiles();
+    updateToolbarState();
+    updateStatusBar();
+  }
+}
+
+// ===== TOOLBAR STATE =====
+function updateToolbarState() {
+  document.getElementById('btnBack').classList.toggle('disabled', historyIndex <= 0);
+  document.getElementById('btnForward').classList.toggle('disabled', historyIndex >= historyStack.length - 1);
+  document.getElementById('btnUp').classList.toggle('disabled', currentPath.length <= 1);
+  document.getElementById('btnRename').classList.toggle('disabled', selectedItems.size !== 1);
+  document.getElementById('btnDelete').classList.toggle('disabled', selectedItems.size === 0);
+  document.getElementById('btnCut').classList.toggle('disabled', selectedItems.size === 0);
+  document.getElementById('btnCopy').classList.toggle('disabled', selectedItems.size === 0);
+  document.getElementById('btnPaste').classList.toggle('disabled', clipboard.items.length === 0);
+}
+
+function updateStatusBar() {
+  const folder = getCurrentFolder();
+  const totalItems = Object.keys(folder).length;
+  const selCount = selectedItems.size;
+  let text = `${totalItems} item`;
+  if (totalItems !== 1) text += '';
+  if (selCount > 0) {
+    let totalSize = 0;
+    selectedItems.forEach(name => {
+      const node = folder[name];
+      if (node && node.size) totalSize += node.size;
+    });
+    text += `  ·  ${selCount} dipilih`;
+    if (totalSize > 0) text += `  ·  ${formatSize(totalSize)}`;
+  }
+  document.getElementById('statusText').textContent = text;
+}
+
+function updateViewButtons() {
+  document.getElementById('btnGridView').classList.toggle('bg-black/5', viewMode === 'grid');
+  document.getElementById('btnListView').classList.toggle('bg-black/5', viewMode === 'list');
+  // Sort indicators
+  const indicators = { name: 'sortNameIndicator', dateModified: 'sortDateIndicator', type: 'sortTypeIndicator', size: 'sortSizeIndicator' };
+  Object.entries(indicators).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = sortBy === key ? (sortDir === 'asc' ? '▲' : '▼') : '';
+  });
+}
+
+// ===== VIEW / SORT =====
+function setView(mode) {
+  viewMode = mode;
+  render();
+}
+
+function setSort(by) {
+  if (sortBy === by) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  else { sortBy = by; sortDir = 'asc'; }
+  render();
+}
+
+// ===== ADDRESS BAR =====
+document.getElementById('addressBarContainer').addEventListener('click', function(e) {
+  if (e.target.closest('.nav-breadcrumb') || e.target.id === 'addressInput') return;
+  showAddressInput();
+});
+
+function showAddressInput() {
+  const nav = document.getElementById('breadcrumbNav');
+  const input = document.getElementById('addressInput');
+  nav.style.display = 'none';
+  input.style.display = 'block';
+  input.value = currentPath.join('\\');
+  input.focus();
+  input.select();
+}
+
+function hideAddressInput() {
+  const nav = document.getElementById('breadcrumbNav');
+  const input = document.getElementById('addressInput');
+  nav.style.display = 'flex';
+  input.style.display = 'none';
+}
+
+// ===== SEARCH =====
+function handleSearch(val) {
+  searchQuery = val;
+  renderFiles();
+}
+
+function toggleSearch() {
+  const input = document.getElementById('searchInput');
+  input.focus();
+}
+
+// ===== FILE OPERATIONS =====
+function copyItem() {
+  if (selectedItems.size === 0) return;
+  const folder = getCurrentFolder();
+  clipboard = { items: [...selectedItems].map(n => ({ name: n, node: JSON.parse(JSON.stringify(folder[n])) })), mode: 'copy', sourcePath: [...currentPath] };
+  showToast(`${clipboard.items.length} item disalin`);
+  updateToolbarState();
+}
+
+function cutItem() {
+  if (selectedItems.size === 0) return;
+  const folder = getCurrentFolder();
+  clipboard = { items: [...selectedItems].map(n => ({ name: n, node: JSON.parse(JSON.stringify(folder[n])) })), mode: 'cut', sourcePath: [...currentPath] };
+  showToast(`${clipboard.items.length} item dipotong`);
+  updateToolbarState();
+}
+
+function pasteItem() {
+  if (clipboard.items.length === 0) return;
+  const folder = getCurrentFolder();
+  clipboard.items.forEach(item => {
+    let newName = item.name;
+    let counter = 1;
+    while (folder[newName]) {
+      const dotIdx = newName.lastIndexOf('.');
+      if (item.node.type === 'folder' || dotIdx === -1) {
+        newName = `${item.name} (${counter})`;
+      } else {
+        newName = `${newName.substring(0, dotIdx)} (${counter})${newName.substring(dotIdx)}`;
+      }
+      counter++;
+    }
+    folder[newName] = JSON.parse(JSON.stringify(item.node));
+  });
+
+  if (clipboard.mode === 'cut') {
+    const sourceFolder = getNode(clipboard.sourcePath);
+    if (sourceFolder && sourceFolder.children) {
+      clipboard.items.forEach(item => {
+        delete sourceFolder.children[item.name];
+      });
+    }
+    clipboard = { items: [], mode: null };
+  }
+
+  selectedItems.clear();
+  render();
+  showToast('Item ditempel');
+}
+
+function deleteItem() {
+  if (selectedItems.size === 0) return;
+  const folder = getCurrentFolder();
+  const count = selectedItems.size;
+  selectedItems.forEach(name => delete folder[name]);
+  selectedItems.clear();
+  render();
+  showToast(`${count} item dihapus`);
+}
+
+function startRename() {
+  if (selectedItems.size !== 1) return;
+  const name = [...selectedItems][0];
+  renamingItem = name;
+  renderFiles();
+  // Find the element and add input
+  setTimeout(() => {
+    const el = document.querySelector(`[data-name="${escapeAttr(name)}"]`);
+    if (!el) return;
+    const nameDiv = viewMode === 'grid' ? el.querySelector('div:nth-child(2)') : el.querySelector('div:nth-child(2)');
+    if (!nameDiv) return;
+    const originalName = name;
+    const dotIdx = name.lastIndexOf('.');
+    const selectEnd = (renamingItem && getFileNode(renamingItem)?.type !== 'folder' && dotIdx > 0) ? dotIdx : name.length;
+    nameDiv.innerHTML = `<input class="rename-input w-full text-[12px] bg-white px-1 py-0.5" value="${escapeAttr(originalName)}" data-original="${escapeAttr(originalName)}"/>`;
+    const inp = nameDiv.querySelector('input');
+    inp.focus();
+    inp.setSelectionRange(0, selectEnd);
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') finishRename(inp.value, originalName);
+      if (e.key === 'Escape') cancelRename();
+    });
+    inp.addEventListener('blur', () => finishRename(inp.value, originalName));
+  }, 50);
+}
+
+function getFileNode(name) {
+  const folder = getCurrentFolder();
+  return folder[name];
+}
+
+function finishRename(newName, oldName) {
+  if (!renamingItem) return;
+  renamingItem = null;
+  const folder = getCurrentFolder();
+  newName = newName.trim();
+  if (!newName || newName === oldName) { render(); return; }
+  if (folder[newName]) { showToast('Nama sudah ada'); render(); return; }
+  folder[newName] = folder[oldName];
+  delete folder[oldName];
+  // Update ext for files
+  if (folder[newName].type === 'file') {
+    const dotIdx = newName.lastIndexOf('.');
+    folder[newName].ext = dotIdx > 0 ? newName.substring(dotIdx + 1) : '';
+  }
+  selectedItems.clear();
+  selectedItems.add(newName);
+  render();
+  showToast('Item diganti nama');
+}
+
+function cancelRename() {
+  renamingItem = null;
+  render();
+}
+
+// ===== NEW ITEM =====
+function showNewItemMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('newItemMenu');
+  menu.innerHTML = `
+    <div class="px-3 py-1.5 text-[11px] text-[#888] font-semibold">Baru</div>
+    <div class="menu-item flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f5f5f5] text-[13px]" onclick="createNewItem('folder')">
+      ${getSmallFolderIcon()}<span>Folder</span></div>
+    <div class="menu-item flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f5f5f5] text-[13px]" onclick="createNewItem('txt')">
+      ${getSmallFileIcon('txt')}<span>Dokumen Teks</span></div>
+    <div class="menu-item flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f5f5f5] text-[13px]" onclick="createNewItem('docx')">
+      ${getSmallFileIcon('docx')}<span>Dokumen Word</span></div>
+    <div class="menu-item flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f5f5f5] text-[13px]" onclick="createNewItem('xlsx')">
+      ${getSmallFileIcon('xlsx')}<span>Lembar Kerja Excel</span></div>
+    <div class="menu-item flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f5f5f5] text-[13px]" onclick="createNewItem('pptx')">
+      ${getSmallFileIcon('pptx')}<span>Presentasi PowerPoint</span></div>
+    <div class="menu-item flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f5f5f5] text-[13px]" onclick="createNewItem('html')">
+      ${getSmallFileIcon('html')}<span>Dokumen HTML</span></div>
+  `;
+  showMenuAt(menu, e);
+}
+
+function createNewItem(type) {
+  hideAllMenus();
+  const folder = getCurrentFolder();
+  let name, node;
+  if (type === 'folder') {
+    name = 'Folder Baru';
+    let c = 1;
+    while (folder[name]) { name = `Folder Baru (${c})`; c++; }
+    node = { type: 'folder', children: {}, dateModified: new Date().toISOString() };
+  } else {
+    const names = { txt: 'Dokumen Teks Baru.txt', docx: 'Dokumen Baru.docx', xlsx: 'Lembar Kerja Baru.xlsx', pptx: 'Presentasi Baru.pptx', html: 'Halaman Baru.html' };
+    name = names[type] || `File Baru.${type}`;
+    let c = 1;
+    const baseName = name.substring(0, name.lastIndexOf('.'));
+    const ext = name.substring(name.lastIndexOf('.'));
+    while (folder[name]) { name = `${baseName} (${c})${ext}`; c++; }
+    node = { type: 'file', ext: type, size: 0, dateModified: new Date().toISOString() };
+  }
+  folder[name] = node;
+  selectedItems.clear();
+  selectedItems.add(name);
+  render();
+  // Auto rename
+  setTimeout(() => startRename(), 100);
+}
+
+// ===== SORT MENU =====
+function toggleSortMenu(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('sortMenu');
+  const options = [
+    { key: 'name', label: 'Nama' },
+    { key: 'dateModified', label: 'Tanggal Diubah' },
+    { key: 'type', label: 'Tipe' },
+    { key: 'size', label: 'Ukuran' },
+  ];
+  menu.innerHTML = options.map(o => {
+    const isActive = sortBy === o.key;
+    const arrow = isActive ? (sortDir === 'asc' ? ' ▲' : ' ▼') : '';
+    return `<div class="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-[#f5f5f5] text-[13px] ${isActive ? 'font-semibold' : ''}" onclick="setSort('${o.key}'); hideAllMenus();">
+      ${isActive ? '<svg class="w-4 h-4 text-[#0078d4]" fill="currentColor" viewBox="0 0 20 20"><path d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/></svg>' : '<span class="w-4"></span>'}
+      <span>${o.label}${arrow}</span></div>`;
+  }).join('');
+  showMenuAt(menu, e);
+}
+
+// ===== CONTEXT MENU =====
+function showContextMenu(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const folder = getCurrentFolder();
+  const hasSelection = selectedItems.size > 0;
+  
+  let menuItems = [];
+  
+  if (hasSelection) {
+    menuItems.push({ icon: '📊', label: 'Buka', action: () => { const name = [...selectedItems][0]; handleItemDblClick(name); }, disabled: selectedItems.size !== 1 });
+    menuItems.push({ divider: true });
+    menuItems.push({ icon: '✂️', label: 'Potong', action: cutItem, shortcut: 'Ctrl+X' });
+    menuItems.push({ icon: '📋', label: 'Salin', action: copyItem, shortcut: 'Ctrl+C' });
+    menuItems.push({ divider: true });
+    menuItems.push({ icon: '✏️', label: 'Ganti Nama', action: startRename, shortcut: 'F2', disabled: selectedItems.size !== 1 });
+    menuItems.push({ icon: '🗑️', label: 'Hapus', action: deleteItem, shortcut: 'Del' });
+    menuItems.push({ divider: true });
+    menuItems.push({ icon: '📄', label: 'Properti', action: () => showProperties() });
+  } else {
+    menuItems.push({ icon: '📁', label: 'Folder Baru', action: () => createNewItem('folder') });
+    menuItems.push({ icon: '📄', label: 'Dokumen Teks', action: () => createNewItem('txt') });
+    menuItems.push({ icon: '📝', label: 'Dokumen Word', action: () => createNewItem('docx') });
+    menuItems.push({ divider: true });
+    if (clipboard.items.length > 0) {
+      menuItems.push({ icon: '📋', label: 'Tempel', action: pasteItem, shortcut: 'Ctrl+V' });
+      menuItems.push({ divider: true });
+    }
+    menuItems.push({ icon: '🔄', label: 'Segarkan', action: () => render() });
+    menuItems.push({ divider: true });
+    menuItems.push({ icon: '📊', label: 'Urutkan berdasarkan', sub: true });
+    menuItems.push({ icon: '🔲', label: 'Tampilan', sub: true });
+  }
+
+  const menu = document.getElementById('contextMenu');
+  menu.innerHTML = menuItems.map(item => {
+    if (item.divider) return '<div class="my-1 border-t border-[#e5e5e5]"></div>';
+    return `<div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f5f5f5] text-[13px] ${item.disabled ? 'opacity-40 pointer-events-none' : ''}" data-action="${item.label}">
+      <span class="w-5 text-center text-sm">${item.icon || ''}</span>
+      <span class="flex-1">${item.label}</span>
+      ${item.shortcut ? `<span class="text-[11px] text-[#999] ml-4">${item.shortcut}</span>` : ''}
+    </div>`;
+  }).join('');
+
+  // Wire up actions
+  let actionIdx = 0;
+  menuItems.forEach((item, i) => {
+    if (item.divider) return;
+    const el = menu.querySelectorAll('[data-action]')[actionIdx];
+    if (el && item.action) el.addEventListener('click', () => { hideAllMenus(); item.action(); });
+    actionIdx++;
+  });
+
+  showMenuAt(menu, e);
+}
+
+function handleItemContext(e, name) {
+  e.preventDefault();
+  e.stopPropagation();
+  if (!selectedItems.has(name)) {
+    selectedItems.clear();
+    selectedItems.add(name);
+    renderFiles();
+  }
+  showContextMenu(e);
+}
+
+function showProperties() {
+  const name = [...selectedItems][0];
+  const node = getFileNode(name);
+  if (!node) return;
+  const isFolder = node.type === 'folder';
+  const type = isFolder ? 'Folder file' : getColumnType(node.ext);
+  let childCount = '';
+  if (isFolder && node.children) {
+    childCount = `${Object.keys(node.children).length} item`;
+  }
+  showToast(`${name} — ${type}${childCount ? ' · ' + childCount : ''}${node.size ? ' · ' + formatSize(node.size) : ''}`);
+}
+
+// ===== MENU HELPERS =====
+function showMenuAt(menu, e) {
+  menu.classList.remove('hidden');
+  const rect = menu.getBoundingClientRect();
+  let x = e.clientX, y = e.clientY;
+  if (x + 220 > window.innerWidth) x = window.innerWidth - 220;
+  if (y + rect.height > window.innerHeight) y = window.innerHeight - rect.height - 10;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+}
+
+function hideAllMenus() {
+  document.getElementById('contextMenu').classList.add('hidden');
+  document.getElementById('newItemMenu').classList.add('hidden');
+  document.getElementById('sortMenu').classList.add('hidden');
+}
+
+document.addEventListener('click', hideAllMenus);
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.ctrlKey && e.key === 'c') { e.preventDefault(); copyItem(); }
+  else if (e.ctrlKey && e.key === 'x') { e.preventDefault(); cutItem(); }
+  else if (e.ctrlKey && e.key === 'v') { e.preventDefault(); pasteItem(); }
+  else if (e.key === 'Delete') { deleteItem(); }
+  else if (e.key === 'F2') { e.preventDefault(); startRename(); }
+  else if (e.key === 'Backspace') { e.preventDefault(); goUp(); }
+  else if (e.key === 'Enter' && selectedItems.size === 1) { handleItemDblClick([...selectedItems][0]); }
+  else if (e.ctrlKey && e.key === 'a') { e.preventDefault(); const folder = getCurrentFolder(); Object.keys(folder).forEach(n => selectedItems.add(n)); renderFiles(); updateToolbarState(); updateStatusBar(); }
+});
+
+// ===== TOAST =====
+function showToast(msg) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast-anim bg-[#1a1a1a] text-white text-sm px-4 py-2.5 rounded-lg shadow-lg';
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 2500);
+}
+
+// ===== INIT =====
+render();
+</script>
+</body>
+</html>
