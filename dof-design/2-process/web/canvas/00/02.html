@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+
+    <title>Responsive Grid Engine v5.1 - Anti-Tumpuk 1x1 Snap Edition</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #fafafa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            background: #ffffff;
+            touch-action: none;
+            /* Mencegah gesture bawaan browser konflik dengan canvas */
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        //====================================================
+        // CANVAS
+        //====================================================
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        //====================================================
+        // LOGICAL CONFIGURATION
+        //====================================================
+        const Logical = {
+            cols: 5,
+            rows: 5
+        };
+
+        //====================================================
+        // RENDER GRID (VISUAL ZOOM & KAMERA)
+        //====================================================
+        const Render = {
+            zoom: 0, // Zoom berkisar dari -15 (zoom out jauh) hingga 4 (zoom in penuh)
+            min: 1, // Minimal 1 grid penuh 100% di layar saat zoom maks
+            max: 20, // Maksimal 20 grid penuh di layar saat zoom out maks
+            get cols() {
+                return clamp(
+                    Logical.cols - this.zoom,
+                    this.min,
+                    this.max
+                );
+            },
+            get rows() {
+                return this.cols;
+            },
+            get cellWidth() {
+                return canvas.width / this.cols;
+            },
+            get cellHeight() {
+                return canvas.height / this.rows;
+            }
+        };
+
+        //====================================================
+        function clamp(v, min, max) {
+            return Math.max(min, Math.min(max, v));
+        }
+
+        //====================================================
+        // STATE INTERAKSI (DRAG & DROP)
+        //====================================================
+        let isDragging = false;
+        let selectedObject = null;
+        let dragOffset = { col: 0, row: 0 };
+
+        // State untuk umpan balik visual sel target terlarang
+        let hoverTargetCol = -1;
+        let hoverTargetRow = -1;
+        let hoverTargetOccupied = false;
+
+        //====================================================
+        // FUNGSI ANTI-TUMPUK
+        //====================================================
+
+        // Cek apakah sel (col, row) sudah ditempati objek lain
+        function isCellOccupied(col, row, excludeObj = null) {
+            for (const obj of objects) {
+                if (obj === excludeObj) continue;
+                if (obj.col === col && obj.row === row) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Mencari sel kosong terdekat menggunakan pencarian spiral (jarak Manhattan)
+        function findNearestEmptyCell(targetCol, targetRow, excludeObj, maxCols, maxRows) {
+            // Jika sel target kosong, langsung kembalikan
+            if (!isCellOccupied(targetCol, targetRow, excludeObj)) {
+                return { col: targetCol, row: targetRow };
+            }
+
+            // Pencarian melingkar (spiral) berdasarkan radius
+            for (let radius = 1; radius < Math.max(maxCols, maxRows); radius++) {
+                for (let dr = -radius; dr <= radius; dr++) {
+                    for (let dc = -radius; dc <= radius; dc++) {
+                        // Hanya periksa sel di perimeter persegi (lingkaran spiral)
+                        if (Math.abs(dr) !== radius && Math.abs(dc) !== radius) continue;
+
+                        const c = targetCol + dc;
+                        const r = targetRow + dr;
+
+                        // Pastikan dalam batas grid
+                        if (c >= 0 && c < maxCols && r >= 0 && r < maxRows) {
+                            if (!isCellOccupied(c, r, excludeObj)) {
+                                return { col: c, row: r };
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Fallback: jika tidak ada sel kosong sama sekali (grid penuh total)
+            return { col: targetCol, row: targetRow };
+        }
+
+        //====================================================
+        // BLUEPRINT OBJEK (1x1 DENGAN RASIO KOORDINAT PROPORSIONAL)
+        //====================================================
+        class GridObject {
+            constructor({ col, row, color, totalCols = 5 }) {
+                this.col = col;
+                this.row = row;
+                this.width = 1;
+                this.height = 1;
+                this.color = color;
+
+                this.pctX = 0;
+                this.pctY = 0;
+                this.updateRatios(totalCols);
+            }
+
+            updateRatios(totalCols) {
+                if (totalCols > 1) {
+                    this.pctX = this.col / (totalCols - 1);
+                    this.pctY = this.row / (totalCols - 1);
+                } else {
+                    this.pctX = 0;
+                    this.pctY = 0;
+                }
+            }
+
+            applyNewGrid(totalCols) {
+                if (totalCols > 1) {
+                    let targetCol = Math.round(this.pctX * (totalCols - 1));
+                    let targetRow = Math.round(this.pctY * (totalCols - 1));
+
+                    targetCol = clamp(targetCol, 0, totalCols - 1);
+                    targetRow = clamp(targetRow, 0, totalCols - 1);
+
+                    // Cari sel kosong terdekat jika target sudah ditempati
+                    const nearest = findNearestEmptyCell(targetCol, targetRow, this, totalCols, totalCols);
+                    this.col = nearest.col;
+                    this.row = nearest.row;
+                } else {
+                    this.col = 0;
+                    this.row = 0;
+                }
+            }
+
+            get x() {
+                return (this.col / Render.cols) * canvas.width;
+            }
+
+            get y() {
+                return (this.row / Render.rows) * canvas.height;
+            }
+
+            get w() {
+                return (this.width / Render.cols) * canvas.width;
+            }
+
+            get h() {
+                return (this.height / Render.rows) * canvas.height;
+            }
+
+            draw() {
+                const isSelected = (selectedObject === this);
+
+                if (isSelected) {
+                    // Tampilan saat di-drag: kotak bayangan transparan dengan garis putus-putus
+                    ctx.fillStyle = "rgba(0, 0, 0, 0.03)";
+                    ctx.fillRect(
+                        this.x + 2,
+                        this.y + 2,
+                        Math.max(4, this.w - 4),
+                        Math.max(4, this.h - 4)
+                    );
+
+                    ctx.strokeStyle = "#111111";
+                    ctx.lineWidth = 1.5;
+                    ctx.setLineDash([5, 4]);
+                    ctx.strokeRect(
+                        this.x + 2,
+                        this.y + 2,
+                        Math.max(4, this.w - 4),
+                        Math.max(4, this.h - 4)
+                    );
+                    ctx.setLineDash([]);
+                } else {
+                    // Tampilan normal
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(
+                        this.x + 2,
+                        this.y + 2,
+                        Math.max(4, this.w - 4),
+                        Math.max(4, this.h - 4)
+                    );
+
+                    ctx.strokeStyle = "rgba(0,0,0,0.05)";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(
+                        this.x + 2,
+                        this.y + 2,
+                        Math.max(4, this.w - 4),
+                        Math.max(4, this.h - 4)
+                    );
+                }
+            }
+        }
+
+        //====================================================
+        // DAFTAR OBJEK (MONOKROMATIS - SEMUA UKURAN 1x1)
+        //====================================================
+        const objects = [
+            new GridObject({
+                col: 0,
+                row: 0,
+                color: "#111111",
+                totalCols: 5
+            }),
+            new GridObject({
+                col: 2,
+                row: 1,
+                color: "#777777",
+                totalCols: 5
+            }),
+            new GridObject({
+                col: 4,
+                row: 3,
+                color: "#cccccc",
+                totalCols: 5
+            }),
+            // Objek tambahan untuk pengujian anti-tumpuk
+            new GridObject({
+                col: 1,
+                row: 1,
+                color: "#444444",
+                totalCols: 5
+            }),
+            new GridObject({
+                col: 3,
+                row: 2,
+                color: "#aaaaaa",
+                totalCols: 5
+            })
+        ];
+
+        //====================================================
+        // UTILITY DETEKSI INPUT & POSISI
+        //====================================================
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function getObjectAt(x, y) {
+            for (let i = objects.length - 1; i >= 0; i--) {
+                const obj = objects[i];
+                if (x >= obj.x && x <= obj.x + obj.w &&
+                    y >= obj.y && y <= obj.y + obj.h) {
+                    return obj;
+                }
+            }
+            return null;
+        }
+
+        //====================================================
+        // GAMBAR GARIS GRID
+        //====================================================
+        function drawGrid() {
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.06)";
+            ctx.lineWidth = 1;
+
+            for (let c = 0; c <= Render.cols; c++) {
+                const x = c * Render.cellWidth;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+
+            for (let r = 0; r <= Render.rows; r++) {
+                const y = r * Render.cellHeight;
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Umpan balik visual: sorot sel target jika sedang drag dan sel terisi
+            if (isDragging && hoverTargetOccupied && hoverTargetCol >= 0 && hoverTargetRow >= 0) {
+                const hx = (hoverTargetCol / Render.cols) * canvas.width;
+                const hy = (hoverTargetRow / Render.rows) * canvas.height;
+                const hw = Render.cellWidth;
+                const hh = Render.cellHeight;
+
+                ctx.fillStyle = "rgba(255, 0, 0, 0.15)";
+                ctx.fillRect(hx, hy, hw, hh);
+
+                ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+                ctx.lineWidth = 2;
+                ctx.setLineDash([3, 3]);
+                ctx.strokeRect(hx + 1, hy + 1, hw - 2, hh - 2);
+                ctx.setLineDash([]);
+            }
+        }
+
+        //====================================================
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            for (const obj of objects) {
+                obj.draw();
+            }
+            drawInfo();
+        }
+
+        //====================================================
+        // PANEL INFORMASI DEBUG
+        //====================================================
+        function drawInfo() {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+            ctx.fillRect(10, 10, 220, 105);
+
+            ctx.fillStyle = "#222222";
+            ctx.font = "12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+            ctx.fillText("GRID RESOLUTION : " + Render.cols + " × " + Render.rows, 20, 32);
+            ctx.fillText("OBJECT COUNT    : " + objects.length, 20, 52);
+
+            let zoomText = Render.zoom;
+            if (Render.zoom === 4) zoomText += " (MAX IN)";
+            if (Render.zoom === -15) zoomText += " (MAX OUT)";
+            ctx.fillText("ZOOM LEVEL      : " + zoomText, 20, 72);
+
+            // Info status anti-tumpuk
+            let statusText = "STATUS          : ";
+            if (isDragging && hoverTargetOccupied) {
+                statusText += "⚠️ SEL TERISI";
+                ctx.fillStyle = "#cc0000";
+            } else if (isDragging) {
+                statusText += "✅ SEL KOSONG";
+                ctx.fillStyle = "#228822";
+            } else {
+                statusText += "SIAP";
+                ctx.fillStyle = "#222222";
+            }
+            ctx.fillText(statusText, 20, 92);
+
+            // Info grid penuh
+            const totalCells = Render.cols * Render.rows;
+            const remainingCells = totalCells - objects.length;
+            let capacityText = "SEL TERSISA     : " + remainingCells + " / " + totalCells;
+            if (remainingCells <= 3 && remainingCells > 0) {
+                ctx.fillStyle = "#e67e00";
+            } else if (remainingCells === 0) {
+                ctx.fillStyle = "#cc0000";
+                capacityText = "GRID PENUH!     : 0 / " + totalCells;
+            } else {
+                ctx.fillStyle = "#222222";
+            }
+            ctx.fillText(capacityText, 20, 107);
+        }
+
+        //====================================================
+        function resize() {
+            canvas.width = innerWidth;
+            canvas.height = innerHeight;
+            draw();
+        }
+
+        addEventListener("resize", resize);
+
+        //====================================================
+        // LOGIKA ZOOM DENGAN PENYELARASAN SEL & ANTI-TUMPUK
+        //====================================================
+        function zoom(step) {
+            Render.zoom = clamp(Render.zoom + step, -15, 4);
+            const currentCols = Render.cols;
+
+            // Reset hover state saat zoom
+            hoverTargetCol = -1;
+            hoverTargetRow = -1;
+            hoverTargetOccupied = false;
+
+            // applyNewGrid di dalam objek sudah menangani resolusi tabrakan
+            for (const obj of objects) {
+                obj.applyNewGrid(currentCols);
+            }
+
+            // Perbarui rasio setelah semua posisi diselesaikan
+            for (const obj of objects) {
+                obj.updateRatios(currentCols);
+            }
+
+            draw();
+        }
+
+        canvas.addEventListener("wheel", e => {
+            e.preventDefault();
+            if (isDragging) return;
+            zoom(e.deltaY < 0 ? 1 : -1);
+        }, { passive: false });
+
+        //====================================================
+        // EVENT MOUSE (DRAG, DROP & SNAP) + ANTI-TUMPUK
+        //====================================================
+        canvas.addEventListener("mousedown", e => {
+            const pos = getPointerPos(e);
+            const obj = getObjectAt(pos.x, pos.y);
+
+            if (obj) {
+                isDragging = true;
+                selectedObject = obj;
+
+                const logicalX = (pos.x / canvas.width) * Render.cols;
+                const logicalY = (pos.y / canvas.height) * Render.rows;
+
+                dragOffset.col = logicalX - obj.col;
+                dragOffset.row = logicalY - obj.row;
+
+                canvas.style.cursor = "grabbing";
+                draw();
+            }
+        });
+
+        canvas.addEventListener("mousemove", e => {
+            const pos = getPointerPos(e);
+
+            if (isDragging && selectedObject) {
+                const logicalX = (pos.x / canvas.width) * Render.cols;
+                const logicalY = (pos.y / canvas.height) * Render.rows;
+
+                let targetCol = Math.round(logicalX - dragOffset.col);
+                let targetRow = Math.round(logicalY - dragOffset.row);
+
+                targetCol = clamp(targetCol, 0, Render.cols - 1);
+                targetRow = clamp(targetRow, 0, Render.rows - 1);
+
+                // Update state hover untuk umpan balik visual
+                hoverTargetCol = targetCol;
+                hoverTargetRow = targetRow;
+
+                const isSameCell = (selectedObject.col === targetCol && selectedObject.row === targetRow);
+                const targetOccupied = isCellOccupied(targetCol, targetRow, selectedObject);
+                hoverTargetOccupied = targetOccupied;
+
+                // Jika sel target kosong atau masih sel yang sama, izinkan perpindahan
+                if (!isSameCell && !targetOccupied) {
+                    selectedObject.col = targetCol;
+                    selectedObject.row = targetRow;
+                    selectedObject.updateRatios(Render.cols);
+                }
+                // Jika sel terisi, abaikan perpindahan (objek tetap di tempat)
+
+                draw();
+            } else {
+                // Saat tidak drag, update kursor berdasarkan hover
+                const hoverObj = getObjectAt(pos.x, pos.y);
+                canvas.style.cursor = hoverObj ? "grab" : "default";
+
+                // Reset state hover jika tidak dragging
+                if (!isDragging) {
+                    hoverTargetCol = -1;
+                    hoverTargetRow = -1;
+                    hoverTargetOccupied = false;
+                }
+            }
+        });
+
+        canvas.addEventListener("mouseup", () => {
+            if (isDragging) {
+                isDragging = false;
+                selectedObject = null;
+                canvas.style.cursor = "default";
+
+                // Reset umpan balik visual
+                hoverTargetCol = -1;
+                hoverTargetRow = -1;
+                hoverTargetOccupied = false;
+
+                draw();
+            }
+        });
+
+        // Mouse leave canvas saat drag — lepaskan objek
+        canvas.addEventListener("mouseleave", () => {
+            if (isDragging) {
+                isDragging = false;
+                selectedObject = null;
+                canvas.style.cursor = "default";
+                hoverTargetCol = -1;
+                hoverTargetRow = -1;
+                hoverTargetOccupied = false;
+                draw();
+            }
+        });
+
+        //====================================================
+        // EVENT SENTUH MOBILE (PINCH TO ZOOM & DRAG) + ANTI-TUMPUK
+        //====================================================
+        let pinch = null;
+
+        function distance(a, b) {
+            return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        }
+
+        canvas.addEventListener("touchstart", e => {
+            if (e.touches.length === 1) {
+                const pos = getPointerPos(e);
+                const obj = getObjectAt(pos.x, pos.y);
+
+                if (obj) {
+                    isDragging = true;
+                    selectedObject = obj;
+
+                    const logicalX = (pos.x / canvas.width) * Render.cols;
+                    const logicalY = (pos.y / canvas.height) * Render.rows;
+
+                    dragOffset.col = logicalX - obj.col;
+                    dragOffset.row = logicalY - obj.row;
+                    draw();
+                }
+            } else if (e.touches.length === 2) {
+                isDragging = false;
+                selectedObject = null;
+                pinch = distance(e.touches[0], e.touches[1]);
+
+                hoverTargetCol = -1;
+                hoverTargetRow = -1;
+                hoverTargetOccupied = false;
+                draw();
+            }
+        }, { passive: false });
+
+        canvas.addEventListener("touchmove", e => {
+            if (e.touches.length === 1 && isDragging && selectedObject) {
+                e.preventDefault();
+                const pos = getPointerPos(e);
+
+                const logicalX = (pos.x / canvas.width) * Render.cols;
+                const logicalY = (pos.y / canvas.height) * Render.rows;
+
+                let targetCol = Math.round(logicalX - dragOffset.col);
+                let targetRow = Math.round(logicalY - dragOffset.row);
+
+                targetCol = clamp(targetCol, 0, Render.cols - 1);
+                targetRow = clamp(targetRow, 0, Render.rows - 1);
+
+                hoverTargetCol = targetCol;
+                hoverTargetRow = targetRow;
+
+                const isSameCell = (selectedObject.col === targetCol && selectedObject.row === targetRow);
+                const targetOccupied = isCellOccupied(targetCol, targetRow, selectedObject);
+                hoverTargetOccupied = targetOccupied;
+
+                if (!isSameCell && !targetOccupied) {
+                    selectedObject.col = targetCol;
+                    selectedObject.row = targetRow;
+                    selectedObject.updateRatios(Render.cols);
+                }
+
+                draw();
+            } else if (e.touches.length === 2) {
+                e.preventDefault();
+                const d = distance(e.touches[0], e.touches[1]);
+                if (pinch === null) {
+                    pinch = d;
+                    return;
+                }
+
+                if (Math.abs(d - pinch) > 20) {
+                    zoom(d > pinch ? 1 : -1);
+                    pinch = d;
+                }
+            }
+        }, { passive: false });
+
+        canvas.addEventListener("touchend", e => {
+            if (e.touches.length === 0) {
+                isDragging = false;
+                selectedObject = null;
+                pinch = null;
+
+                hoverTargetCol = -1;
+                hoverTargetRow = -1;
+                hoverTargetOccupied = false;
+
+                draw();
+            } else if (e.touches.length === 1) {
+                pinch = null;
+            }
+        });
+
+        //====================================================
+        // KEYBOARD SHORTCUT UNTUK RESET ZOOM
+        //====================================================
+        addEventListener("keydown", e => {
+            if (e.key === "0" || e.key === "r" || e.key === "R") {
+                // Reset zoom ke 0
+                if (Render.zoom !== 0) {
+                    Render.zoom = 0;
+                    const currentCols = Render.cols;
+                    for (const obj of objects) {
+                        obj.applyNewGrid(currentCols);
+                    }
+                    for (const obj of objects) {
+                        obj.updateRatios(currentCols);
+                    }
+                    hoverTargetCol = -1;
+                    hoverTargetRow = -1;
+                    hoverTargetOccupied = false;
+                    draw();
+                }
+            }
+        });
+
+        //====================================================
+        // INISIALISASI AWAL
+        //====================================================
+        resize();
+    </script>
+</body>
+</html>

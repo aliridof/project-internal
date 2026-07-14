@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>dof-design-system v2</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#fff}
+#layout{position:fixed;inset:0;overflow:hidden}
+#grid{position:absolute;inset:0}
+#object{
+ position:absolute;
+ border:2px solid #000;
+ background:#fff;
+ box-sizing:border-box;
+}
+#handle{
+ position:absolute;
+ width:10px;height:10px;
+ right:-6px;bottom:-6px;
+ background:#000;
+ cursor:nwse-resize;
+}
+</style>
+</head>
+<body>
+<div id="layout">
+  <canvas id="grid"></canvas>
+  <div id="object"><div id="handle"></div></div>
+</div>
+<script>
+class Camera{
+  constructor(){this.x=0;this.y=0;this.zoom=1}
+}
+class CoordinateSystem{
+  constructor(cols=50,rows=50){
+    this.cols=cols;this.rows=rows;
+  }
+}
+class Renderer{
+  constructor(canvas,layout,camera,coord){
+    this.cv=canvas;this.ctx=canvas.getContext("2d");
+    this.layout=layout;this.camera=camera;this.coord=coord;
+    addEventListener("resize",()=>this.resize());
+    this.resize();
+  }
+  resize(){
+    this.cv.width=this.layout.clientWidth;
+    this.cv.height=this.layout.clientHeight;
+    this.render();
+  }
+  unit(){
+    return {
+      w:(this.layout.clientWidth/this.coord.cols)*this.camera.zoom,
+      h:(this.layout.clientHeight/this.coord.rows)*this.camera.zoom
+    }
+  }
+  render(){
+    const c=this.ctx;
+    const w=this.cv.width,h=this.cv.height;
+    c.clearRect(0,0,w,h);
+    c.strokeStyle="#e5e5e5";
+    c.lineWidth=1;
+    const u=this.unit();
+    const ox=((this.camera.x%u.w)+u.w)%u.w;
+    const oy=((this.camera.y%u.h)+u.h)%u.h;
+    for(let x=ox;x<=w;x+=u.w){
+      c.beginPath();c.moveTo(x,0);c.lineTo(x,h);c.stroke();
+    }
+    for(let y=oy;y<=h;y+=u.h){
+      c.beginPath();c.moveTo(0,y);c.lineTo(w,y);c.stroke();
+    }
+  }
+}
+class Object2D{
+ constructor(el,renderer,camera){
+   this.el=el;this.camera=camera;this.renderer=renderer;
+   this.x=5;this.y=5;this.w=5;this.h=5;
+   this.handle=el.querySelector("#handle");
+   this.bind();this.draw();
+ }
+ draw(){
+   const u=this.renderer.unit();
+   this.el.style.left=(this.camera.x+this.x*u.w)+"px";
+   this.el.style.top=(this.camera.y+this.y*u.h)+"px";
+   this.el.style.width=(this.w*u.w)+"px";
+   this.el.style.height=(this.h*u.h)+"px";
+ }
+ bind(){
+  let drag=false,resize=false,sx,sy,ox,oy,ow,oh;
+  this.el.addEventListener("pointerdown",e=>{
+    if(e.target===this.handle)return;
+    drag=true;
+    sx=e.clientX;sy=e.clientY;ox=this.x;oy=this.y;
+  });
+  this.handle.addEventListener("pointerdown",e=>{
+    e.stopPropagation();
+    resize=true;sx=e.clientX;sy=e.clientY;ow=this.w;oh=this.h;
+  });
+  addEventListener("pointermove",e=>{
+    const u=this.renderer.unit();
+    if(drag){
+      this.x=Math.max(0,ox+Math.round((e.clientX-sx)/u.w));
+      this.y=Math.max(0,oy+Math.round((e.clientY-sy)/u.h));
+      this.draw();
+    }
+    if(resize){
+      this.w=Math.max(1,ow+Math.round((e.clientX-sx)/u.w));
+      this.h=Math.max(1,oh+Math.round((e.clientY-sy)/u.h));
+      this.draw();
+    }
+  });
+  addEventListener("pointerup",()=>{drag=false;resize=false});
+ }
+}
+const layout=document.getElementById("layout");
+const camera=new Camera();
+const coord=new CoordinateSystem(50,50);
+const renderer=new Renderer(document.getElementById("grid"),layout,camera,coord);
+const obj=new Object2D(document.getElementById("object"),renderer,camera);
+
+layout.addEventListener("wheel",e=>{
+ if(!e.ctrlKey)return;
+ e.preventDefault();
+ const f=e.deltaY<0?1.1:0.9;
+ camera.zoom=Math.max(.2,Math.min(8,camera.zoom*f));
+ renderer.render();obj.draw();
+},{passive:false});
+
+let pan=false,px=0,py=0;
+layout.addEventListener("pointerdown",e=>{
+ if(e.button!==1)return;
+ pan=true;px=e.clientX;py=e.clientY;
+});
+addEventListener("pointermove",e=>{
+ if(!pan)return;
+ camera.x+=e.clientX-px;
+ camera.y+=e.clientY-py;
+ px=e.clientX;py=e.clientY;
+ renderer.render();obj.draw();
+});
+addEventListener("pointerup",()=>pan=false);
+addEventListener("keydown",e=>{
+ if(e.ctrlKey&&e.key==="0"){
+   e.preventDefault();
+   camera.x=0;camera.y=0;camera.zoom=1;
+   renderer.render();obj.draw();
+ }
+});
+</script>
+</body>
+</html>

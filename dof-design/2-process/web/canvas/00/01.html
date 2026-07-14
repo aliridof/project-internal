@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+
+<title>Responsive Grid Engine v5 - 1x1 Snap Edition</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#fafafa; 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+canvas{
+    width:100vw;
+    height:100vh;
+    display:block;
+    background:#ffffff;
+    touch-action:none; /* Mencegah gesture bawaan browser konflik dengan canvas */
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+
+//====================================================
+// CANVAS
+//====================================================
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+
+//====================================================
+// LOGICAL CONFIGURATION
+//====================================================
+const Logical={
+    cols:5,
+    rows:5
+};
+
+//====================================================
+// RENDER GRID (VISUAL ZOOM & KAMERA)
+//====================================================
+const Render={
+    zoom:0,  // Zoom berkisar dari -15 (zoom out jauh) hingga 4 (zoom in penuh)
+    min:1,   // Minimal 1 grid penuh 100% di layar saat zoom maks
+    max:20,  // Maksimal 20 grid penuh di layar saat zoom out maks
+    get cols(){
+        // Formula linier dinamis yang mengubah jumlah kolom aktif secara real-time
+        return clamp(
+            Logical.cols - this.zoom,
+            this.min,
+            this.max
+        );
+    },
+    get rows(){
+        return this.cols;
+    },
+    get cellWidth(){
+        return canvas.width/this.cols;
+    },
+    get cellHeight(){
+        return canvas.height/this.rows;
+    }
+};
+
+//====================================================
+function clamp(v,min,max){
+    return Math.max(min, Math.min(max,v));
+}
+
+//====================================================
+// STATE INTERAKSI (DRAG & DROP)
+//====================================================
+let isDragging = false;
+let selectedObject = null;
+// dragOffset menyimpan selisih titik klik mouse relatif terhadap posisi asal objek
+let dragOffset = { col: 0, row: 0 }; 
+
+//====================================================
+// BLUEPRINT OBJEK (MENGGUNAKAN RASIO KOORDINAT PROPORSIONAL)
+//====================================================
+class GridObject{
+    constructor({col, row, color, totalCols = 5}){
+        this.col=col;
+        this.row=row;
+        this.width=1;  // Setiap objek dikunci hanya menempati 1 grid secara horizontal
+        this.height=1; // Setiap objek dikunci hanya menempati 1 grid secara vertikal
+        this.color=color; 
+        
+        // Simpan posisi awal dalam bentuk rasio persentase (0 hingga 1)
+        this.pctX = 0;
+        this.pctY = 0;
+        this.updateRatios(totalCols);
+    }
+
+    // Memperbarui nilai rasio posisi objek terhadap batas grid yang aktif
+    updateRatios(totalCols) {
+        if (totalCols > 1) {
+            this.pctX = this.col / (totalCols - 1);
+            this.pctY = this.row / (totalCols - 1);
+        } else {
+            this.pctX = 0;
+            this.pctY = 0;
+        }
+    }
+
+    // Menghitung ulang koordinat col & row integer berdasarkan rasio saat resolusi grid berubah
+    applyNewGrid(totalCols) {
+        if (totalCols > 1) {
+            this.col = Math.round(this.pctX * (totalCols - 1));
+            this.row = Math.round(this.pctY * (totalCols - 1));
+        } else {
+            this.col = 0;
+            this.row = 0;
+        }
+    }
+
+    // Mengonversi koordinat grid aktif ke piksel layar secara real-time
+    get x(){
+        return (this.col / Render.cols) * canvas.width;
+    }
+
+    get y(){
+        return (this.row / Render.rows) * canvas.height;
+    }
+
+    get w(){
+        return (this.width / Render.cols) * canvas.width;
+    }
+
+    get h(){
+        return (this.height / Render.rows) * canvas.height;
+    }
+
+    draw(){
+        const isSelected = (selectedObject === this);
+        
+        if (isSelected) {
+            // Tampilan saat di-drag: kotak bayangan transparan dengan garis putus-putus
+            ctx.fillStyle = "rgba(0, 0, 0, 0.03)";
+            ctx.fillRect(
+                this.x+2,
+                this.y+2,
+                Math.max(4,this.w-4),
+                Math.max(4,this.h-4)
+            );
+            
+            ctx.strokeStyle = "#111111";
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 4]); // Garis putus-putus minimalis
+            ctx.strokeRect(
+                this.x+2,
+                this.y+2,
+                Math.max(4,this.w-4),
+                Math.max(4,this.h-4)
+            );
+            ctx.setLineDash([]); // Reset pola garis ke solid
+        } else {
+            // Tampilan normal
+            ctx.fillStyle=this.color;
+            ctx.fillRect(
+                this.x+2,
+                this.y+2,
+                Math.max(4,this.w-4),
+                Math.max(4,this.h-4)
+            );
+            
+            ctx.strokeStyle="rgba(0,0,0,0.05)";
+            ctx.lineWidth=1;
+            ctx.strokeRect(
+                this.x+2,
+                this.y+2,
+                Math.max(4,this.w-4),
+                Math.max(4,this.h-4)
+            );
+        }
+    }
+}
+
+//====================================================
+// DAFTAR OBJEK (MONOKROMATIS - SEMUA UKURAN 1x1)
+//====================================================
+const objects=[
+new GridObject({
+    col:0,
+    row:0,
+    color:"#111111",
+    totalCols: 5
+}),
+new GridObject({
+    col:2,
+    row:1,
+    color:"#777777",
+    totalCols: 5
+}),
+new GridObject({
+    col:4,
+    row:3,
+    color:"#cccccc",
+    totalCols: 5
+})
+];
+
+//====================================================
+// UTILITY DETEKSI INPUT & POSISI
+//====================================================
+
+// Mendapatkan koordinat pointer relatif terhadap canvas
+function getPointerPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return {
+        x: clientX - rect.left,
+        y: clientY - rect.top
+    };
+}
+
+// Mencari objek di bawah kursor
+function getObjectAt(x, y) {
+    for (let i = objects.length - 1; i >= 0; i--) {
+        const obj = objects[i];
+        if (x >= obj.x && x <= obj.x + obj.w &&
+            y >= obj.y && y <= obj.y + obj.h) {
+            return obj;
+        }
+    }
+    return null;
+}
+
+//====================================================
+// GAMBAR GARIS GRID
+//====================================================
+function drawGrid(){
+    ctx.strokeStyle="rgba(0, 0, 0, 0.06)";
+    ctx.lineWidth=1;
+
+    // Gambar grid berdasarkan dimensi render saat ini
+    for(let c=0;c<=Render.cols;c++){
+        const x=c*Render.cellWidth;
+        ctx.beginPath();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,canvas.height);
+        ctx.stroke();
+    }
+
+    for(let r=0;r<=Render.rows;r++){
+        const y=r*Render.cellHeight;
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        ctx.lineTo(canvas.width,y);
+        ctx.stroke();
+    }
+}
+
+//====================================================
+function draw(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawGrid();
+    for(const obj of objects){
+        obj.draw();
+    }
+    drawInfo();
+}
+
+//====================================================
+// PANEL INFORMASI DEBUG (MINIMALIS)
+//====================================================
+function drawInfo(){
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.fillRect(10, 10, 180, 85);
+
+    ctx.fillStyle="#222222";
+    ctx.font="12px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    
+    ctx.fillText("GRID RESOLUTION : "+Render.cols+" × "+Render.rows, 20, 32);
+    ctx.fillText("OBJECT COUNT   : "+objects.length, 20, 52);
+    
+    let zoomText = Render.zoom;
+    if (Render.zoom === 4) zoomText += " (MAX IN)";
+    if (Render.zoom === -15) zoomText += " (MAX OUT)";
+    ctx.fillText("ZOOM LEVEL      : "+zoomText, 20, 72);
+}
+
+//====================================================
+function resize(){
+    canvas.width=innerWidth;
+    canvas.height=innerHeight;
+    draw();
+}
+
+addEventListener("resize", resize);
+
+//====================================================
+// LOGIKA ZOOM (-15 SAMPAI 4) DENGAN PENYELARASAN SEL
+//====================================================
+function zoom(step){
+    Render.zoom=clamp(Render.zoom+step, -15, 4);
+    const currentCols = Render.cols;
+    
+    // Perbarui koordinat sel seluruh objek agar selaras dengan ukuran grid baru
+    for(const obj of objects) {
+        obj.applyNewGrid(currentCols);
+    }
+    draw();
+}
+
+canvas.addEventListener("wheel", e=>{
+    e.preventDefault();
+    if (isDragging) return; // Mencegah zoom jika sedang menggeser objek
+    zoom(e.deltaY<0?1:-1);
+}, {passive:false});
+
+//====================================================
+// EVENT MOUSE (DRAG, DROP & SNAP)
+//====================================================
+
+canvas.addEventListener("mousedown", e => {
+    const pos = getPointerPos(e);
+    const obj = getObjectAt(pos.x, pos.y);
+    
+    if (obj) {
+        isDragging = true;
+        selectedObject = obj;
+        
+        // Konversi koordinat piksel klik ke koordinat sel desimal visual (Render Grid)
+        const logicalX = (pos.x / canvas.width) * Render.cols;
+        const logicalY = (pos.y / canvas.height) * Render.rows;
+        
+        // Simpan selisih posisi pointer ke pangkal kiri atas objek agar perpindahan mulus
+        dragOffset.col = logicalX - obj.col;
+        dragOffset.row = logicalY - obj.row;
+        
+        canvas.style.cursor = "grabbing";
+        draw();
+    }
+});
+
+canvas.addEventListener("mousemove", e => {
+    const pos = getPointerPos(e);
+    
+    if (isDragging && selectedObject) {
+        const logicalX = (pos.x / canvas.width) * Render.cols;
+        const logicalY = (pos.y / canvas.height) * Render.rows;
+        
+        let targetCol = Math.round(logicalX - dragOffset.col);
+        let targetRow = Math.round(logicalY - dragOffset.row);
+        
+        // Batasi pergeseran agar objek 1x1 tetap di dalam batas grid aktif (0 sampai Render.cols - 1)
+        targetCol = clamp(targetCol, 0, Render.cols - 1);
+        targetRow = clamp(targetRow, 0, Render.rows - 1);
+        
+        if (selectedObject.col !== targetCol || selectedObject.row !== targetRow) {
+            selectedObject.col = targetCol;
+            selectedObject.row = targetRow;
+            // Perbarui data rasio segera setelah snap agar zoom tetap selaras di posisi baru
+            selectedObject.updateRatios(Render.cols);
+            draw();
+        }
+    } else {
+        const hoverObj = getObjectAt(pos.x, pos.y);
+        canvas.style.cursor = hoverObj ? "grab" : "default";
+    }
+});
+
+canvas.addEventListener("mouseup", () => {
+    if (isDragging) {
+        isDragging = false;
+        selectedObject = null;
+        canvas.style.cursor = "default";
+        draw();
+    }
+});
+
+//====================================================
+// EVENT SENTUH MOBILE (PINCH TO ZOOM & DRAG)
+//====================================================
+let pinch=null;
+
+function distance(a,b){
+    return Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY);
+}
+
+canvas.addEventListener("touchstart", e=>{
+    if (e.touches.length === 1) {
+        const pos = getPointerPos(e);
+        const obj = getObjectAt(pos.x, pos.y);
+        
+        if (obj) {
+            isDragging = true;
+            selectedObject = obj;
+            
+            const logicalX = (pos.x / canvas.width) * Render.cols;
+            const logicalY = (pos.y / canvas.height) * Render.rows;
+            
+            dragOffset.col = logicalX - obj.col;
+            dragOffset.row = logicalY - obj.row;
+            draw();
+        }
+    } else if (e.touches.length === 2) {
+        // Matikan fungsi geser objek jika terdeteksi 2 jari menyentuh layar (fokus ke zoom)
+        isDragging = false;
+        selectedObject = null;
+        pinch = distance(e.touches[0], e.touches[1]);
+        draw();
+    }
+}, {passive:false});
+
+canvas.addEventListener("touchmove", e=>{
+    if (e.touches.length === 1 && isDragging && selectedObject) {
+        e.preventDefault(); // Mencegah scrolling browser
+        const pos = getPointerPos(e);
+        
+        const logicalX = (pos.x / canvas.width) * Render.cols;
+        const logicalY = (pos.y / canvas.height) * Render.rows;
+        
+        let targetCol = Math.round(logicalX - dragOffset.col);
+        let targetRow = Math.round(logicalY - dragOffset.row);
+        
+        // Batasi pergeseran objek 1x1 pada layar sentuh
+        targetCol = clamp(targetCol, 0, Render.cols - 1);
+        targetRow = clamp(targetRow, 0, Render.rows - 1);
+        
+        if (selectedObject.col !== targetCol || selectedObject.row !== targetRow) {
+            selectedObject.col = targetCol;
+            selectedObject.row = targetRow;
+            selectedObject.updateRatios(Render.cols);
+            draw();
+        }
+    } else if (e.touches.length === 2) {
+        e.preventDefault();
+        const d = distance(e.touches[0], e.touches[1]);
+        if (pinch === null) {
+            pinch = d;
+            return;
+        }
+
+        if (Math.abs(d-pinch) > 20) {
+            zoom(d>pinch?1:-1);
+            pinch = d;
+        }
+    }
+}, {passive:false});
+
+canvas.addEventListener("touchend", e=>{
+    if (e.touches.length === 0) {
+        isDragging = false;
+        selectedObject = null;
+        pinch = null;
+        draw();
+    } else if (e.touches.length === 1) {
+        pinch = null; 
+    }
+});
+
+//====================================================
+// INISIALISASI AWAL
+//====================================================
+resize();
+
+</script>
+</body>
+</html>
