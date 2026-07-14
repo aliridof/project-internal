@@ -1,158 +1,134 @@
 // ===== FILE SYSTEM DATA =====
 const FILE_SYSTEM = {
-  'Home': {
+  'PC Ini': {
     type: 'folder', children: {
-      'Pin': { type: 'folder', children: {} },
-      'Recently': { type: 'folder', children: {} },
-      'Frequently': { type: 'folder', children: {} }
-    }
-  },
-  'Internal': {
-    type: 'folder', children: {
-      'Plan': {
+      'Desktop': {
         type: 'folder', children: {
-          'Downloads': {
-            type: 'folder', children: {
-              'Desktop': {
-                type: 'folder', children: {
-                  'Proyek Website': { type: 'folder', children: {
-                    'index.html': { type: 'file', ext: 'html', size: 24576, dateModified: '2024-12-15T10:30:00' },
-                    'style.css': { type: 'file', ext: 'css', size: 8192, dateModified: '2024-12-15T10:30:00' },
-                    'app.js': { type: 'file', ext: 'js', size: 16384, dateModified: '2024-12-14T16:20:00' },
-                    'package.json': { type: 'file', ext: 'json', size: 1024, dateModified: '2024-12-10T09:00:00' },
-                    'README.md': { type: 'file', ext: 'md', size: 4096, dateModified: '2024-12-12T14:00:00' },
-                  }},
-                  'Catatan Rapat.txt': { type: 'file', ext: 'txt', size: 2048, dateModified: '2024-12-18T09:15:00' },
-                  'Shortcut Chrome.lnk': { type: 'file', ext: 'lnk', size: 512, dateModified: '2024-11-01T08:00:00' },
-                }
-              },
-              'Dokumen': {
-                type: 'folder', children: {
-                  'Laporan Tahunan 2024.docx': { type: 'file', ext: 'docx', size: 524288, dateModified: '2024-12-01T11:00:00' },
-                  'Presentasi Q4.pptx': { type: 'file', ext: 'pptx', size: 3145728, dateModified: '2024-11-28T14:30:00' },
-                  'Data Keuangan.xlsx': { type: 'file', ext: 'xlsx', size: 1048576, dateModified: '2024-12-10T16:45:00' },
-                  'Surat Resmi.pdf': { type: 'file', ext: 'pdf', size: 262144, dateModified: '2024-12-05T10:20:00' },
-                  'Catatan Pribadi': { type: 'folder', children: {
-                    'diary.txt': { type: 'file', ext: 'txt', size: 15360, dateModified: '2024-12-20T22:00:00' },
-                    'ide-kerja.txt': { type: 'file', ext: 'txt', size: 4096, dateModified: '2024-12-19T08:30:00' },
-                  }},
-                  'Proposal Proyek.pdf': { type: 'file', ext: 'pdf', size: 1572864, dateModified: '2024-12-08T13:00:00' },
-                }
-              },
-              'Unduhan': {
-                type: 'folder', children: {
-                  'setup-vscode.exe': { type: 'file', ext: 'exe', size: 89128960, dateModified: '2024-12-15T08:00:00' },
-                  'node-v20.10.0.msi': { type: 'file', ext: 'msi', size: 31457280, dateModified: '2024-12-14T12:00:00' },
-                  'wallpaper-nature.jpg': { type: 'file', ext: 'jpg', size: 4194304, dateModified: '2024-12-16T15:00:00' },
-                  'ebook-programming.pdf': { type: 'file', ext: 'pdf', size: 8388608, dateModified: '2024-12-13T19:30:00' },
-                  'font-pack.zip': { type: 'file', ext: 'zip', size: 15728640, dateModified: '2024-12-12T10:00:00' },
-                  'video-tutorial.mp4': { type: 'file', ext: 'mp4', size: 157286400, dateModified: '2024-12-11T20:00:00' },
-                  'music-ambient.mp3': { type: 'file', ext: 'mp3', size: 7340032, dateModified: '2024-12-10T18:00:00' },
-                }
-              },
-              'Gambar': {
-                type: 'folder', children: {
-                  'Foto Liburan': { type: 'folder', children: {
-                    'IMG_20241201_001.jpg': { type: 'file', ext: 'jpg', size: 5242880, dateModified: '2024-12-01T12:00:00' },
-                    'IMG_20241201_002.jpg': { type: 'file', ext: 'jpg', size: 4823449, dateModified: '2024-12-01T12:05:00' },
-                    'IMG_20241202_003.jpg': { type: 'file', ext: 'jpg', size: 5505024, dateModified: '2024-12-02T14:30:00' },
-                    'panorama-beach.png': { type: 'file', ext: 'png', size: 12582912, dateModified: '2024-12-03T09:00:00' },
-                  }},
-                  'Screenshot': { type: 'folder', children: {
-                    'screenshot-2024-12-10.png': { type: 'file', ext: 'png', size: 1048576, dateModified: '2024-12-10T11:00:00' },
-                    'screenshot-2024-12-15.png': { type: 'file', ext: 'png', size: 921600, dateModified: '2024-12-15T16:30:00' },
-                    'screenshot-2024-12-18.png': { type: 'file', ext: 'png', size: 1105920, dateModified: '2024-12-18T09:45:00' },
-                  }},
-                  'logo-perusahaan.png': { type: 'file', ext: 'png', size: 262144, dateModified: '2024-11-15T10:00:00' },
-                  'banner-web.svg': { type: 'file', ext: 'svg', size: 32768, dateModified: '2024-11-20T13:00:00' },
-                  'avatar.png': { type: 'file', ext: 'png', size: 65536, dateModified: '2024-12-05T08:00:00' },
-                }
-              },
-              'Musik': {
-                type: 'folder', children: {
-                  'Playlist Santai': { type: 'folder', children: {
-                    'rain-sounds.mp3': { type: 'file', ext: 'mp3', size: 8388608, dateModified: '2024-11-10T20:00:00' },
-                    'jazz-cafe.mp3': { type: 'file', ext: 'mp3', size: 6291456, dateModified: '2024-11-12T18:00:00' },
-                    'lo-fi-beats.mp3': { type: 'file', ext: 'mp3', size: 7340032, dateModified: '2024-11-15T22:00:00' },
-                  }},
-                  'podcast-ep1.mp3': { type: 'file', ext: 'mp3', size: 52428800, dateModified: '2024-12-05T07:00:00' },
-                  'audiobook-ch1.m4a': { type: 'file', ext: 'm4a', size: 31457280, dateModified: '2024-12-08T21:00:00' },
-                }
-              },
-              'Video': {
-                type: 'folder', children: {
-                  'Rekaman Meeting': { type: 'folder', children: {
-                    'meeting-2024-12-10.mp4': { type: 'file', ext: 'mp4', size: 209715200, dateModified: '2024-12-10T17:00:00' },
-                    'meeting-2024-12-17.mp4': { type: 'file', ext: 'mp4', size: 262144000, dateModified: '2024-12-17T17:30:00' },
-                  }},
-                  'tutorial-css.mp4': { type: 'file', ext: 'mp4', size: 157286400, dateModified: '2024-12-01T10:00:00' },
-                  'demo-product.mp4': { type: 'file', ext: 'mp4', size: 104857600, dateModified: '2024-11-25T14:00:00' },
-                  'clip-lucu.webm': { type: 'file', ext: 'webm', size: 20971520, dateModified: '2024-12-15T20:00:00' },
-                }
-              },
-              'Drive C:': {
-                type: 'folder', children: {
-                  'Windows': { type: 'folder', children: {
-                    'System32': { type: 'folder', children: {
-                      'cmd.exe': { type: 'file', ext: 'exe', size: 286720, dateModified: '2024-06-01T00:00:00' },
-                      'notepad.exe': { type: 'file', ext: 'exe', size: 204800, dateModified: '2024-06-01T00:00:00' },
-                    }},
-                    'Fonts': { type: 'folder', children: {
-                      'arial.ttf': { type: 'file', ext: 'ttf', size: 131072, dateModified: '2024-06-01T00:00:00' },
-                      'consolas.ttf': { type: 'file', ext: 'ttf', size: 98304, dateModified: '2024-06-01T00:00:00' },
-                      'segoeui.ttf': { type: 'file', ext: 'ttf', size: 262144, dateModified: '2024-06-01T00:00:00' },
-                    }},
-                  }},
-                  'Program Files': { type: 'folder', children: {
-                    'Microsoft VS Code': { type: 'folder', children: {
-                      'Code.exe': { type: 'file', ext: 'exe', size: 104857600, dateModified: '2024-11-20T10:00:00' },
-                      'resources': { type: 'folder', children: {} },
-                    }},
-                    'Google': { type: 'folder', children: {
-                      'Chrome': { type: 'folder', children: {
-                        'chrome.exe': { type: 'file', ext: 'exe', size: 2621440, dateModified: '2024-12-01T08:00:00' },
-                      }},
-                    }},
-                  }},
-                  'Users': { type: 'folder', children: {
-                    'Pengguna': { type: 'folder', children: {} },
-                  }},
-                }
-              },
-              'Drive D:': {
-                type: 'folder', children: {
-                  'Game': { type: 'folder', children: {
-                    'Steam': { type: 'folder', children: {
-                      'steam.exe': { type: 'file', ext: 'exe', size: 1572864, dateModified: '2024-10-15T12:00:00' },
-                    }},
-                    'Epic Games': { type: 'folder', children: {} },
-                  }},
-                  'Backup': { type: 'folder', children: {
-                    'backup-2024-12-01.zip': { type: 'file', ext: 'zip', size: 524288000, dateModified: '2024-12-01T23:00:00' },
-                    'backup-2024-12-15.zip': { type: 'file', ext: 'zip', size: 629145600, dateModified: '2024-12-15T23:00:00' },
-                  }},
-                }
-              },
-            }
-          }
+          'Proyek Website': { type: 'folder', children: {
+            'index.html': { type: 'file', ext: 'html', size: 24576, dateModified: '2024-12-15T10:30:00' },
+            'style.css': { type: 'file', ext: 'css', size: 8192, dateModified: '2024-12-15T10:30:00' },
+            'app.js': { type: 'file', ext: 'js', size: 16384, dateModified: '2024-12-14T16:20:00' },
+            'package.json': { type: 'file', ext: 'json', size: 1024, dateModified: '2024-12-10T09:00:00' },
+            'README.md': { type: 'file', ext: 'md', size: 4096, dateModified: '2024-12-12T14:00:00' },
+          }},
+          'Catatan Rapat.txt': { type: 'file', ext: 'txt', size: 2048, dateModified: '2024-12-18T09:15:00' },
+          'Shortcut Chrome.lnk': { type: 'file', ext: 'lnk', size: 512, dateModified: '2024-11-01T08:00:00' },
         }
-      }
-    }
-  },
-  'External': {
-    type: 'folder', children: {
-      'Storage': { type: 'folder', children: {} },
-      'Drive': { type: 'folder', children: {} },
-      'Git': { type: 'folder', children: {} },
-      'Share': { type: 'folder', children: {} },
-      'Mail': { type: 'folder', children: {} }
+      },
+      'Dokumen': {
+        type: 'folder', children: {
+          'Laporan Tahunan 2024.docx': { type: 'file', ext: 'docx', size: 524288, dateModified: '2024-12-01T11:00:00' },
+          'Presentasi Q4.pptx': { type: 'file', ext: 'pptx', size: 3145728, dateModified: '2024-11-28T14:30:00' },
+          'Data Keuangan.xlsx': { type: 'file', ext: 'xlsx', size: 1048576, dateModified: '2024-12-10T16:45:00' },
+          'Surat Resmi.pdf': { type: 'file', ext: 'pdf', size: 262144, dateModified: '2024-12-05T10:20:00' },
+          'Catatan Pribadi': { type: 'folder', children: {
+            'diary.txt': { type: 'file', ext: 'txt', size: 15360, dateModified: '2024-12-20T22:00:00' },
+            'ide-kerja.txt': { type: 'file', ext: 'txt', size: 4096, dateModified: '2024-12-19T08:30:00' },
+          }},
+          'Proposal Proyek.pdf': { type: 'file', ext: 'pdf', size: 1572864, dateModified: '2024-12-08T13:00:00' },
+        }
+      },
+      'Unduhan': {
+        type: 'folder', children: {
+          'setup-vscode.exe': { type: 'file', ext: 'exe', size: 89128960, dateModified: '2024-12-15T08:00:00' },
+          'node-v20.10.0.msi': { type: 'file', ext: 'msi', size: 31457280, dateModified: '2024-12-14T12:00:00' },
+          'wallpaper-nature.jpg': { type: 'file', ext: 'jpg', size: 4194304, dateModified: '2024-12-16T15:00:00' },
+          'ebook-programming.pdf': { type: 'file', ext: 'pdf', size: 8388608, dateModified: '2024-12-13T19:30:00' },
+          'font-pack.zip': { type: 'file', ext: 'zip', size: 15728640, dateModified: '2024-12-12T10:00:00' },
+          'video-tutorial.mp4': { type: 'file', ext: 'mp4', size: 157286400, dateModified: '2024-12-11T20:00:00' },
+          'music-ambient.mp3': { type: 'file', ext: 'mp3', size: 7340032, dateModified: '2024-12-10T18:00:00' },
+        }
+      },
+      'Gambar': {
+        type: 'folder', children: {
+          'Foto Liburan': { type: 'folder', children: {
+            'IMG_20241201_001.jpg': { type: 'file', ext: 'jpg', size: 5242880, dateModified: '2024-12-01T12:00:00' },
+            'IMG_20241201_002.jpg': { type: 'file', ext: 'jpg', size: 4823449, dateModified: '2024-12-01T12:05:00' },
+            'IMG_20241202_003.jpg': { type: 'file', ext: 'jpg', size: 5505024, dateModified: '2024-12-02T14:30:00' },
+            'panorama-beach.png': { type: 'file', ext: 'png', size: 12582912, dateModified: '2024-12-03T09:00:00' },
+          }},
+          'Screenshot': { type: 'folder', children: {
+            'screenshot-2024-12-10.png': { type: 'file', ext: 'png', size: 1048576, dateModified: '2024-12-10T11:00:00' },
+            'screenshot-2024-12-15.png': { type: 'file', ext: 'png', size: 921600, dateModified: '2024-12-15T16:30:00' },
+            'screenshot-2024-12-18.png': { type: 'file', ext: 'png', size: 1105920, dateModified: '2024-12-18T09:45:00' },
+          }},
+          'logo-perusahaan.png': { type: 'file', ext: 'png', size: 262144, dateModified: '2024-11-15T10:00:00' },
+          'banner-web.svg': { type: 'file', ext: 'svg', size: 32768, dateModified: '2024-11-20T13:00:00' },
+          'avatar.png': { type: 'file', ext: 'png', size: 65536, dateModified: '2024-12-05T08:00:00' },
+        }
+      },
+      'Musik': {
+        type: 'folder', children: {
+          'Playlist Santai': { type: 'folder', children: {
+            'rain-sounds.mp3': { type: 'file', ext: 'mp3', size: 8388608, dateModified: '2024-11-10T20:00:00' },
+            'jazz-cafe.mp3': { type: 'file', ext: 'mp3', size: 6291456, dateModified: '2024-11-12T18:00:00' },
+            'lo-fi-beats.mp3': { type: 'file', ext: 'mp3', size: 7340032, dateModified: '2024-11-15T22:00:00' },
+          }},
+          'podcast-ep1.mp3': { type: 'file', ext: 'mp3', size: 52428800, dateModified: '2024-12-05T07:00:00' },
+          'audiobook-ch1.m4a': { type: 'file', ext: 'm4a', size: 31457280, dateModified: '2024-12-08T21:00:00' },
+        }
+      },
+      'Video': {
+        type: 'folder', children: {
+          'Rekaman Meeting': { type: 'folder', children: {
+            'meeting-2024-12-10.mp4': { type: 'file', ext: 'mp4', size: 209715200, dateModified: '2024-12-10T17:00:00' },
+            'meeting-2024-12-17.mp4': { type: 'file', ext: 'mp4', size: 262144000, dateModified: '2024-12-17T17:30:00' },
+          }},
+          'tutorial-css.mp4': { type: 'file', ext: 'mp4', size: 157286400, dateModified: '2024-12-01T10:00:00' },
+          'demo-product.mp4': { type: 'file', ext: 'mp4', size: 104857600, dateModified: '2024-11-25T14:00:00' },
+          'clip-lucu.webm': { type: 'file', ext: 'webm', size: 20971520, dateModified: '2024-12-15T20:00:00' },
+        }
+      },
+      'Drive C:': {
+        type: 'folder', children: {
+          'Windows': { type: 'folder', children: {
+            'System32': { type: 'folder', children: {
+              'cmd.exe': { type: 'file', ext: 'exe', size: 286720, dateModified: '2024-06-01T00:00:00' },
+              'notepad.exe': { type: 'file', ext: 'exe', size: 204800, dateModified: '2024-06-01T00:00:00' },
+            }},
+            'Fonts': { type: 'folder', children: {
+              'arial.ttf': { type: 'file', ext: 'ttf', size: 131072, dateModified: '2024-06-01T00:00:00' },
+              'consolas.ttf': { type: 'file', ext: 'ttf', size: 98304, dateModified: '2024-06-01T00:00:00' },
+              'segoeui.ttf': { type: 'file', ext: 'ttf', size: 262144, dateModified: '2024-06-01T00:00:00' },
+            }},
+          }},
+          'Program Files': { type: 'folder', children: {
+            'Microsoft VS Code': { type: 'folder', children: {
+              'Code.exe': { type: 'file', ext: 'exe', size: 104857600, dateModified: '2024-11-20T10:00:00' },
+              'resources': { type: 'folder', children: {} },
+            }},
+            'Google': { type: 'folder', children: {
+              'Chrome': { type: 'folder', children: {
+                'chrome.exe': { type: 'file', ext: 'exe', size: 2621440, dateModified: '2024-12-01T08:00:00' },
+              }},
+            }},
+          }},
+          'Users': { type: 'folder', children: {
+            'Pengguna': { type: 'folder', children: {} },
+          }},
+        }
+      },
+      'Drive D:': {
+        type: 'folder', children: {
+          'Game': { type: 'folder', children: {
+            'Steam': { type: 'folder', children: {
+              'steam.exe': { type: 'file', ext: 'exe', size: 1572864, dateModified: '2024-10-15T12:00:00' },
+            }},
+            'Epic Games': { type: 'folder', children: {} },
+          }},
+          'Backup': { type: 'folder', children: {
+            'backup-2024-12-01.zip': { type: 'file', ext: 'zip', size: 524288000, dateModified: '2024-12-01T23:00:00' },
+            'backup-2024-12-15.zip': { type: 'file', ext: 'zip', size: 629145600, dateModified: '2024-12-15T23:00:00' },
+          }},
+        }
+      },
     }
   }
 };
 
 // ===== STATE =====
-let currentPath = ['Internal', 'Plan', 'Downloads'];
-let historyStack = [['Internal', 'Plan', 'Downloads']];
+let currentPath = ['PC Ini', 'Desktop'];
+let historyStack = [['PC Ini', 'Desktop']];
 let historyIndex = 0;
 let selectedItems = new Set();
 let clipboard = { items: [], mode: null }; // mode: 'copy' | 'cut'
@@ -161,14 +137,15 @@ let sortBy = 'name';
 let sortDir = 'asc';
 let searchQuery = '';
 let renamingItem = null;
+let editingItem = null;
 
 // ===== TAB STATE =====
 let tabs = [
   {
     id: 'tab-1',
-    name: 'Downloads',
-    currentPath: ['Internal', 'Plan', 'Downloads'],
-    historyStack: [['Internal', 'Plan', 'Downloads']],
+    name: 'Desktop',
+    currentPath: ['PC Ini', 'Desktop'],
+    historyStack: [['PC Ini', 'Desktop']],
     historyIndex: 0,
     selectedItems: new Set(),
     searchQuery: ''
@@ -206,13 +183,12 @@ function saveActiveTabState() {
     activeTab.historyIndex = historyIndex;
     activeTab.selectedItems = new Set(selectedItems);
     activeTab.searchQuery = searchQuery;
-    activeTab.name = currentPath[currentPath.length - 1] || 'Internal';
+    activeTab.name = currentPath[currentPath.length - 1] || 'PC Ini';
   }
 }
 
 // ===== ITEM POSITIONS FOR CANVAS VIEW =====
 let itemPositions = {};
-const renderedEditors = new Map();
 try {
   const saved = localStorage.getItem('dof_explorer_positions');
   if (saved) {
@@ -529,7 +505,7 @@ function renderTabs() {
   
   container.innerHTML = tabs.map(tab => {
     const isActive = tab.id === activeTabId;
-    const name = tab.name || tab.currentPath[tab.currentPath.length - 1] || 'Internal';
+    const name = tab.name || tab.currentPath[tab.currentPath.length - 1] || 'PC Ini';
     
     let icon = '📁';
     if (name === 'Desktop') icon = '🖥️';
@@ -539,16 +515,7 @@ function renderTabs() {
     else if (name === 'Musik') icon = '🎵';
     else if (name === 'Video') icon = '🎬';
     else if (name.startsWith('Local Disk') || name.startsWith('Volume') || name.startsWith('Drive')) icon = '💾';
-    else if (name === 'Home') icon = '🏠';
-    else if (name === 'Internal') icon = '💾';
-    else if (name === 'External') icon = '🌐';
-    else if (name === 'Plan') icon = '📁';
-    else if (name === 'Downloads') icon = '📥';
-    else if (name === 'Storage') icon = '📁';
-    else if (name === 'Drive') icon = '🚀';
-    else if (name === 'Git') icon = '🔗';
-    else if (name === 'Share') icon = '📁';
-    else if (name === 'Mail') icon = '📧';
+    else if (name === 'PC Ini') icon = '💻';
     
     const activeClasses = isActive 
       ? 'bg-white text-[#1a1a1a] border-[#e0e0e0] border-t-2 border-t-[#0078d4] shadow-sm font-semibold' 
@@ -578,13 +545,14 @@ function switchTab(tabId) {
   saveActiveTabState();
   activeTabId = tabId;
   syncActiveTabState();
+  editingItem = null;
   render();
 }
 
-function addNewTab(path = ['Internal', 'Plan', 'Downloads']) {
+function addNewTab(path = ['PC Ini', 'Desktop']) {
   saveActiveTabState();
   const id = `tab-${nextTabId++}`;
-  const name = path[path.length - 1] || 'Internal';
+  const name = path[path.length - 1] || 'PC Ini';
   
   tabs.push({
     id: id,
@@ -645,53 +613,30 @@ function renderBreadcrumb() {
 }
 
 function renderSidebar() {
-  const container = document.getElementById('sidebarContainer');
-  if (!container) return;
-
-  const items = [
-    // Home Section
-    { name: 'Home', path: ['Home'], icon: '🏠', level: 0 },
-    { name: 'Pin', path: ['Home', 'Pin'], icon: '📌', level: 1 },
-    { name: 'Recently', path: ['Home', 'Recently'], icon: '🕐', level: 1 },
-    { name: 'Frequently', path: ['Home', 'Frequently'], icon: '⭐', level: 1 },
-    
-    // Divider
-    { divider: true },
-
-    // Internal Section
-    { name: 'Internal', path: ['Internal'], icon: '💾', level: 0 },
-    { name: 'Plan', path: ['Internal', 'Plan'], icon: '📁', level: 1 },
-    { name: 'Downloads', path: ['Internal', 'Plan', 'Downloads'], icon: '📥', level: 2 },
-
-    // Divider
-    { divider: true },
-
-    // External Section
-    { name: 'External', path: ['External'], icon: '🌐', level: 0 },
-    { name: 'Storage', path: ['External', 'Storage'], icon: '📁', level: 1 },
-    { name: 'Drive', path: ['External', 'Drive'], icon: '🚀', level: 1 },
-    { name: 'Git', path: ['External', 'Git'], icon: '🔗', level: 1 },
-    { name: 'Share', path: ['External', 'Share'], icon: '📁', level: 1 },
-    { name: 'Mail', path: ['External', 'Mail'], icon: '📧', level: 1 },
+  const qa = document.getElementById('sidebarQuickAccess');
+  const pc = document.getElementById('sidebarThisPC');
+  const quickPaths = [
+    { name: 'Desktop', path: ['PC Ini', 'Desktop'], icon: '🖥️' },
+    { name: 'Unduhan', path: ['PC Ini', 'Unduhan'], icon: '⬇️' },
+    { name: 'Dokumen', path: ['PC Ini', 'Dokumen'], icon: '📄' },
+    { name: 'Gambar', path: ['PC Ini', 'Gambar'], icon: '🖼️' },
+    { name: 'Musik', path: ['PC Ini', 'Musik'], icon: '🎵' },
+    { name: 'Video', path: ['PC Ini', 'Video'], icon: '🎬' },
   ];
+  qa.innerHTML = quickPaths.map(p => {
+    const isActive = JSON.stringify(currentPath) === JSON.stringify(p.path);
+    return `<div class="sidebar-item flex items-center gap-3 px-4 py-1.5 cursor-pointer ${isActive ? 'active' : ''}" onclick="navigateToPathArray(${JSON.stringify(p.path).replace(/"/g, '&quot;')})">
+      <span class="text-sm">${p.icon}</span><span class="text-[13px] truncate">${p.name}</span></div>`;
+  }).join('');
 
-  container.innerHTML = items.map(item => {
-    if (item.divider) {
-      return `<div class="my-2 border-t border-[#e5e5e5]"></div>`;
-    }
-
-    const isActive = JSON.stringify(currentPath) === JSON.stringify(item.path);
-    let paddingClass = 'pl-4';
-    if (item.level === 1) paddingClass = 'pl-8';
-    if (item.level === 2) paddingClass = 'pl-12';
-
-    const fontClass = item.level === 0 ? 'font-semibold text-[#1a1a1a]' : 'text-[#444]';
-
-    return `<div class="sidebar-item flex items-center gap-2.5 ${paddingClass} py-1.5 cursor-pointer ${isActive ? 'active' : ''}" 
-      onclick="navigateToPathArray(${JSON.stringify(item.path).replace(/"/g, '&quot;')})">
-      <span class="text-sm shrink-0">${item.icon}</span>
-      <span class="text-[13px] truncate ${fontClass}">${item.name}</span>
-    </div>`;
+  const pcPaths = [
+    { name: 'Drive C:', path: ['PC Ini', 'Drive C:'], icon: '💾' },
+    { name: 'Drive D:', path: ['PC Ini', 'Drive D:'], icon: '💿' },
+  ];
+  pc.innerHTML = pcPaths.map(p => {
+    const isActive = JSON.stringify(currentPath) === JSON.stringify(p.path);
+    return `<div class="sidebar-item flex items-center gap-3 px-4 py-1.5 cursor-pointer ${isActive ? 'active' : ''}" onclick="navigateToPathArray(${JSON.stringify(p.path).replace(/"/g, '&quot;')})">
+      <span class="text-sm">${p.icon}</span><span class="text-[13px] truncate">${p.name}</span></div>`;
   }).join('');
 }
 
@@ -746,54 +691,50 @@ function renderFiles() {
     const pathPrefix = currentPath.join('/') + '/';
     container.innerHTML = `<div class="relative w-full h-full min-h-[500px]" style="min-width: 100%; min-height: 100%;" id="canvasArea">${items.map(([name, node]) => {
       const isSelected = selectedItems.has(name);
+      const icon = node.type === 'folder' ? getFolderIcon() : getFileIcon(node.ext);
+      const displayName = name.length > 20 ? name.substring(0, 18) + '…' : name;
       const key = pathPrefix + name;
       const pos = itemPositions[key] || { x: 20, y: 20 };
-
-      if (renderedEditors.has(key)) {
-        const editor = renderedEditors.get(key);
-        if (node.content === undefined) {
-          node.content = getDefaultContent(name, node.ext);
-        }
-        return `<div class="absolute bg-white border border-[#c0c0c0] rounded-lg shadow-lg flex flex-col overflow-hidden text-editor"
-          style="left: ${editor.x}px; top: ${editor.y}px; width: ${editor.width}px; height: ${editor.height}px; min-width: 200px; min-height: 150px; z-index: 50;"
-          data-name="${escapeAttr(name)}"
-          id="editor-${escapeAttr(name)}">
-          <div class="flex items-center justify-between bg-[#f3f3f3] hover:bg-[#eaeaea] border-b border-[#e0e0e0] px-3 py-1.5 select-none cursor-move shrink-0 editor-header"
-               onmousedown="initEditorDrag(event, '${escapeJS(name)}')"
-               ontouchstart="initEditorDrag(event, '${escapeJS(name)}')"
-               onclick="handleItemClick(event, '${escapeJS(name)}')">
-            <div class="flex items-center gap-2 pointer-events-none select-none text-[12px] font-semibold text-[#333]">
-              <span class="text-sm shrink-0">${getFileIcon(node.ext)}</span>
-              <span class="truncate max-w-[150px]" title="${escapeAttr(name)}">${escapeHtml(name)}</span>
+      
+      if (name === editingItem) {
+        const textContent = node.content || '';
+        return `<div class="absolute bg-white border border-[#0078d4] shadow-2xl rounded-lg flex flex-col z-50 text-left select-text" 
+          style="left: ${pos.x}px; top: ${pos.y}px; width: 450px; height: 320px; outline: none;" 
+          id="textEditorContainer"
+          onclick="event.stopPropagation()">
+          
+          <!-- Editor Titlebar -->
+          <div class="flex items-center justify-between bg-[#f3f3f3] px-3 py-1.5 border-b border-[#e5e5e5] rounded-t-lg cursor-default select-none">
+            <div class="flex items-center gap-1.5 text-xs font-semibold text-[#333]">
+              <span>📝</span>
+              <span class="truncate max-w-[280px]" title="${escapeAttr(name)}">${escapeHtml(name)} - Notepad</span>
+            </div>
+            <button class="w-6 h-6 flex items-center justify-center rounded hover:bg-black/10 text-xs text-[#555]" onclick="cancelEditFile(event)">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          
+          <!-- Textarea Editor -->
+          <div class="flex-1 p-2 bg-white relative">
+            <textarea id="textFileEditor" class="w-full h-full text-xs font-mono border-0 p-1 resize-none outline-none focus:ring-0 select-text bg-transparent leading-relaxed" 
+              placeholder="Ketik teks di sini..." 
+              oninput="updateEditorWordCount(this.value)"
+              onkeydown="event.stopPropagation()">${escapeHtml(textContent)}</textarea>
+          </div>
+          
+          <!-- Editor Statusbar / Toolbar -->
+          <div class="flex items-center justify-between px-3 py-2 bg-[#f9f9f9] border-t border-[#e5e5e5] rounded-b-lg select-none">
+            <div class="text-[10px] text-[#666]" id="editorWordCount">
+              Karakter: ${textContent.length} | Baris: ${textContent.split('\n').length}
             </div>
             <div class="flex items-center gap-1.5">
-              <button class="w-5 h-5 flex items-center justify-center rounded hover:bg-black/10 text-[#666] text-xs font-bold" 
-                      onclick="unrenderEditor(event, '${escapeJS(name)}')" 
-                      title="Kembalikan ke Ikon">
-                ✕
-              </button>
+              <button class="px-3 py-1 bg-[#f3f3f3] hover:bg-[#e5e5e5] border border-[#ccc] rounded text-xs text-[#333] transition-colors" onclick="cancelEditFile(event)">Batal</button>
+              <button class="px-3 py-1 bg-[#0078d4] hover:bg-[#106ebe] text-white rounded text-xs font-semibold transition-colors shadow-sm" onclick="saveEditedFile(event, '${escapeJS(name)}')">Simpan</button>
             </div>
-          </div>
-          <div class="flex-1 min-h-0 relative p-1 bg-white">
-            <textarea class="w-full h-full p-2 outline-none font-mono text-[12px] leading-relaxed bg-white text-[#222] resize-none border border-transparent focus:border-[#0078d4] rounded"
-                      oninput="handleEditorInput(event, '${escapeJS(name)}')"
-                      onmousedown="event.stopPropagation()"
-                      onclick="event.stopPropagation()"
-                      oncontextmenu="event.stopPropagation()">${escapeHtml(node.content)}</textarea>
-          </div>
-          <div class="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-end justify-end p-0.5 select-none z-10 editor-resize-handle"
-               onmousedown="initEditorResize(event, '${escapeJS(name)}')"
-               ontouchstart="initEditorResize(event, '${escapeJS(name)}')"
-               oncontextmenu="event.stopPropagation()">
-            <svg class="w-2.5 h-2.5 text-[#aaa]" fill="currentColor" viewBox="0 0 10 10">
-              <path d="M10,0 L0,10 L10,10 Z" />
-            </svg>
           </div>
         </div>`;
       }
 
-      const icon = node.type === 'folder' ? getFolderIcon() : getFileIcon(node.ext);
-      const displayName = name.length > 20 ? name.substring(0, 18) + '…' : name;
       return `<div class="canvas-item p-2 flex flex-col items-center justify-center text-center cursor-pointer ${isSelected ? 'selected' : ''}" 
         style="position: absolute; left: ${pos.x}px; top: ${pos.y}px;"
         data-name="${escapeAttr(name)}" 
@@ -838,6 +779,7 @@ function navigateTo(index) {
   currentPath = currentPath.slice(0, index + 1);
   pushHistory();
   selectedItems.clear();
+  editingItem = null;
   searchQuery = '';
   document.getElementById('searchInput').value = '';
   render();
@@ -847,6 +789,7 @@ function navigateToPathArray(pathArr) {
   currentPath = [...pathArr];
   pushHistory();
   selectedItems.clear();
+  editingItem = null;
   searchQuery = '';
   document.getElementById('searchInput').value = '';
   render();
@@ -858,6 +801,7 @@ function navigateToPath(pathStr) {
     currentPath = parts;
     pushHistory();
     selectedItems.clear();
+    editingItem = null;
     render();
   }
   hideAddressInput();
@@ -868,6 +812,7 @@ function goBack() {
     historyIndex--;
     currentPath = [...historyStack[historyIndex]];
     selectedItems.clear();
+    editingItem = null;
     render();
   }
 }
@@ -878,6 +823,7 @@ function goForward() {
     historyIndex++;
     currentPath = [...historyStack[historyIndex]];
     selectedItems.clear();
+    editingItem = null;
     render();
   }
 }
@@ -887,6 +833,7 @@ function goUp() {
     currentPath = currentPath.slice(0, -1);
     pushHistory();
     selectedItems.clear();
+    editingItem = null;
     render();
   }
 }
@@ -898,21 +845,12 @@ function pushHistory() {
 }
 
 // ===== SELECTION =====
-let lastClickTime = 0;
-let lastClickedItem = null;
-
 function handleItemClick(e, name) {
   e.stopPropagation();
   if (didDrag) {
     didDrag = false;
     return;
   }
-
-  const currentTime = new Date().getTime();
-  const isDoubleTap = (name === lastClickedItem && (currentTime - lastClickTime) < 300);
-  lastClickTime = currentTime;
-  lastClickedItem = name;
-
   if (e.ctrlKey || e.metaKey) {
     if (selectedItems.has(name)) selectedItems.delete(name);
     else selectedItems.add(name);
@@ -923,11 +861,6 @@ function handleItemClick(e, name) {
   renderFiles();
   updateToolbarState();
   updateStatusBar();
-
-  if (isDoubleTap) {
-    handleItemDblClick(name);
-    lastClickedItem = null;
-  }
 }
 
 function handleItemDblClick(name) {
@@ -941,14 +874,13 @@ function handleItemDblClick(name) {
     searchQuery = '';
     document.getElementById('searchInput').value = '';
     render();
-  } else if (viewMode === 'canvas' && isTextOrCodeFile(node.ext)) {
-    renderAsEditor(name);
   } else {
     showToast(`Membuka ${name}...`);
   }
 }
 
 function handleContainerClick(e) {
+  if (editingItem) return;
   if (didDrag) {
     didDrag = false;
     return;
@@ -1002,6 +934,7 @@ function updateViewButtons() {
 // ===== VIEW / SORT =====
 function setView(mode) {
   viewMode = mode;
+  editingItem = null;
   render();
 }
 
@@ -1238,208 +1171,6 @@ function showSortSubMenu(e, parentEl) {
   menu.style.top = parentRect.top + 'px';
 }
 
-// ===== TEXT EDITOR RENDERER FOR CANVAS VIEW =====
-function isTextOrCodeFile(ext) {
-  const textExtensions = ['txt', 'html', 'css', 'js', 'json', 'md', 'svg', 'xml', 'ini', 'log'];
-  return textExtensions.includes((ext || '').toLowerCase());
-}
-
-function getDefaultContent(name, ext) {
-  ext = (ext || '').toLowerCase();
-  if (ext === 'txt') {
-    return `Catatan: ${name}\nDibuat pada: ${new Date().toLocaleDateString()}\n\nTulis sesuatu di sini...`;
-  }
-  if (ext === 'html') {
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>${name}</title>
-</head>
-<body>
-  <h1>Halo dari ${name}!</h1>
-</body>
-</html>`;
-  }
-  if (ext === 'css') {
-    return `body {
-  background-color: #f0f0f0;
-  font-family: sans-serif;
-}`;
-  }
-  if (ext === 'js') {
-    return `console.log("Halo dari ${name}!");`;
-  }
-  if (ext === 'json') {
-    return `{
-  "name": "${name}",
-  "version": "1.0.0",
-  "description": ""
-}`;
-  }
-  if (ext === 'md') {
-    return `# ${name}\n\nDokumen Markdown baru.`;
-  }
-  return `Isi dokumen ${name}`;
-}
-
-function renderAsEditor(name) {
-  const pathPrefix = currentPath.join('/') + '/';
-  const key = pathPrefix + name;
-  const pos = itemPositions[key] || { x: 20, y: 20 };
-  renderedEditors.set(key, {
-    x: pos.x,
-    y: pos.y,
-    width: 320,
-    height: 240
-  });
-  selectedItems.clear();
-  renderFiles();
-}
-
-function unrenderEditor(e, name) {
-  if (e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-  const pathPrefix = currentPath.join('/') + '/';
-  const key = pathPrefix + name;
-  const editor = renderedEditors.get(key);
-  if (editor) {
-    itemPositions[key] = { x: editor.x, y: editor.y };
-    savePositions();
-  }
-  renderedEditors.delete(key);
-  renderFiles();
-}
-
-function handleEditorInput(e, name) {
-  const folder = getCurrentFolder();
-  const node = folder[name];
-  if (node) {
-    node.content = e.target.value;
-    node.size = e.target.value.length;
-    node.dateModified = new Date().toISOString();
-  }
-}
-
-function initEditorDrag(e, name) {
-  if (e.button !== 0 && e.type !== 'touchstart') return;
-  
-  const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
-  const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-  
-  const startMouse = { x: clientX, y: clientY };
-  
-  const pathPrefix = currentPath.join('/') + '/';
-  const key = pathPrefix + name;
-  const editor = renderedEditors.get(key);
-  if (!editor) return;
-  
-  const startPos = { x: editor.x, y: editor.y };
-  const el = document.getElementById(`editor-${name}`);
-  
-  if (el) {
-    document.querySelectorAll('.text-editor').forEach(other => {
-      other.style.zIndex = '40';
-    });
-    el.style.zIndex = '50';
-  }
-  
-  function onMove(moveEvent) {
-    const curX = moveEvent.type === 'touchmove' ? moveEvent.touches[0].clientX : moveEvent.clientX;
-    const curY = moveEvent.type === 'touchmove' ? moveEvent.touches[0].clientY : moveEvent.clientY;
-    
-    const dx = curX - startMouse.x;
-    const dy = curY - startMouse.y;
-    
-    const newX = Math.max(10, startPos.x + dx);
-    const newY = Math.max(10, startPos.y + dy);
-    
-    editor.x = newX;
-    editor.y = newY;
-    
-    if (el) {
-      el.style.left = `${newX}px`;
-      el.style.top = `${newY}px`;
-    }
-    
-    if (moveEvent.cancelable) {
-      moveEvent.preventDefault();
-    }
-  }
-  
-  function onUp() {
-    window.removeEventListener('mousemove', onMove, { passive: false });
-    window.removeEventListener('mouseup', onUp);
-    window.removeEventListener('touchmove', onMove, { passive: false });
-    window.removeEventListener('touchend', onUp);
-    
-    itemPositions[key] = { x: editor.x, y: editor.y };
-    savePositions();
-  }
-  
-  window.addEventListener('mousemove', onMove, { passive: false });
-  window.addEventListener('mouseup', onUp);
-  window.addEventListener('touchmove', onMove, { passive: false });
-  window.addEventListener('touchend', onUp);
-}
-
-function initEditorResize(e, name) {
-  if (e.button !== 0 && e.type !== 'touchstart') return;
-  
-  e.stopPropagation();
-  e.preventDefault();
-  
-  const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
-  const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-  
-  const startMouse = { x: clientX, y: clientY };
-  
-  const pathPrefix = currentPath.join('/') + '/';
-  const key = pathPrefix + name;
-  const editor = renderedEditors.get(key);
-  if (!editor) return;
-  
-  const startSize = { width: editor.width || 320, height: editor.height || 240 };
-  const el = document.getElementById(`editor-${name}`);
-  
-  function onMove(moveEvent) {
-    const curX = moveEvent.type === 'touchmove' ? moveEvent.touches[0].clientX : moveEvent.clientX;
-    const curY = moveEvent.type === 'touchmove' ? moveEvent.touches[0].clientY : moveEvent.clientY;
-    
-    const dx = curX - startMouse.x;
-    const dy = curY - startMouse.y;
-    
-    const newW = Math.max(200, startSize.width + dx);
-    const newH = Math.max(150, startSize.height + dy);
-    
-    editor.width = newW;
-    editor.height = newH;
-    
-    if (el) {
-      el.style.width = `${newW}px`;
-      el.style.height = `${newH}px`;
-    }
-    
-    if (moveEvent.cancelable) {
-      moveEvent.preventDefault();
-    }
-  }
-  
-  function onUp() {
-    window.removeEventListener('mousemove', onMove, { passive: false });
-    window.removeEventListener('mouseup', onUp);
-    window.removeEventListener('touchmove', onMove, { passive: false });
-    window.removeEventListener('touchend', onUp);
-  }
-  
-  window.addEventListener('mousemove', onMove, { passive: false });
-  window.addEventListener('mouseup', onUp);
-  window.addEventListener('touchmove', onMove, { passive: false });
-  window.addEventListener('touchend', onUp);
-}
-
 // ===== CONTEXT MENU =====
 function showContextMenu(e) {
   e.preventDefault();
@@ -1454,23 +1185,15 @@ function showContextMenu(e) {
     const node = name ? getFileNode(name) : null;
     const isFolder = node && node.type === 'folder';
 
-    if (viewMode === 'canvas') {
-      const isTextFile = !isFolder && isTextOrCodeFile(node ? node.ext : '');
-      const isOpenAsEditor = isTextFile;
-      menuItems.push({ 
-        id: 'Open', 
-        icon: isOpenAsEditor ? '📝' : '📊', 
-        label: 'Open', 
-        action: () => { handleItemDblClick(name); }, 
-        disabled: selectedItems.size !== 1 
-      });
+    menuItems.push({ icon: '📊', label: 'Buka', action: () => { handleItemDblClick(name); }, disabled: selectedItems.size !== 1 });
+    const isTextFile = !isFolder && node && ['txt', 'md', 'html', 'css', 'js', 'json'].includes(node.ext?.toLowerCase());
+    if (isTextFile && viewMode === 'canvas') {
+      menuItems.push({ icon: '📝', label: 'Edit Teks', action: () => { startEditFile(name); } });
     }
     if (isFolder && selectedItems.size === 1) {
       menuItems.push({ icon: '➕', label: 'Buka di Tab Baru', action: () => { openInNewTab(name); } });
     }
-    if (menuItems.length > 0) {
-      menuItems.push({ divider: true });
-    }
+    menuItems.push({ divider: true });
     menuItems.push({ icon: '✂️', label: 'Potong', action: cutItem, shortcut: 'Ctrl+X' });
     menuItems.push({ icon: '📋', label: 'Salin', action: copyItem, shortcut: 'Ctrl+C' });
     menuItems.push({ divider: true });
@@ -1498,7 +1221,7 @@ function showContextMenu(e) {
   const menu = document.getElementById('contextMenu');
   menu.innerHTML = menuItems.map(item => {
     if (item.divider) return '<div class="my-1 border-t border-[#e5e5e5]"></div>';
-    return `<div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f5f5f5] text-[13px] ${item.disabled ? 'opacity-40 pointer-events-none' : ''}" data-action="${item.label}" id="${item.id || ''}">
+    return `<div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-[#f5f5f5] text-[13px] ${item.disabled ? 'opacity-40 pointer-events-none' : ''}" data-action="${item.label}">
       <span class="w-5 text-center text-sm">${item.icon || ''}</span>
       <span class="flex-1">${item.label}</span>
       ${item.shortcut ? `<span class="text-[11px] text-[#999] ml-4">${item.shortcut}</span>` : ''}
@@ -1574,7 +1297,7 @@ document.addEventListener('click', hideAllMenus);
 
 // ===== KEYBOARD SHORTCUTS =====
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT') return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
   if (e.ctrlKey && e.key === 'c') { e.preventDefault(); copyItem(); }
   else if (e.ctrlKey && e.key === 'x') { e.preventDefault(); cutItem(); }
   else if (e.ctrlKey && e.key === 'v') { e.preventDefault(); pasteItem(); }
@@ -1627,11 +1350,93 @@ window.closeTab = closeTab;
 window.openInNewTab = openInNewTab;
 window.initDrag = initDrag;
 window.hideAllMenus = hideAllMenus;
-window.renderAsEditor = renderAsEditor;
-window.unrenderEditor = unrenderEditor;
-window.handleEditorInput = handleEditorInput;
-window.initEditorDrag = initEditorDrag;
-window.initEditorResize = initEditorResize;
+
+// ===== TEXT EDITOR FUNCTIONS =====
+function startEditFile(name) {
+  hideAllMenus();
+  const node = getFileNode(name);
+  if (!node) return;
+  
+  // Set default content if empty/undefined
+  if (node.content === undefined) {
+    if (name === 'Catatan Rapat.txt') {
+      node.content = `Catatan Rapat - 18 Desember 2024\n---------------------------------\n1. Pembahasan desain UI baru untuk File Explorer.\n2. Implementasi mode Canvas yang lebih interaktif.\n3. Perbaikan performa loading data berukuran besar.\n\nTindak Lanjut:\n- Menyelesaikan fitur drag and drop.\n- Menambahkan fitur edit file teks langsung di canvas.`;
+    } else if (name === 'diary.txt') {
+      node.content = `Diary - 20 Desember 2024\n------------------------\nHari ini menyelesaikan rancangan mode canvas.\nSemuanya berjalan lancar, dan performa animasi cukup memuaskan.\nBesok akan mulai menguji fitur drag-and-drop.`;
+    } else if (name === 'ide-kerja.txt') {
+      node.content = `Ide Pekerjaan:\n- Mengintegrasikan editor teks instan.\n- Menambahkan shortcut untuk navigasi cepat.\n- Peningkatan palet warna Windows 11.`;
+    } else if (name.endsWith('.html')) {
+      node.content = `<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <title>Halaman Baru</title>\n</head>\n<body>\n  <h1>Halo Dunia!</h1>\n</body>\n</html>`;
+    } else if (name.endsWith('.css')) {
+      node.content = `body {\n  background-color: #f3f3f3;\n  font-family: 'Segoe UI', sans-serif;\n}`;
+    } else if (name.endsWith('.js')) {
+      node.content = `console.log("Aplikasi File Explorer siap!");`;
+    } else if (name.endsWith('.json')) {
+      node.content = `{\n  "name": "proyek-website",\n  "version": "1.0.0",\n  "description": "File Explorer App"\n}`;
+    } else if (name.endsWith('.md')) {
+      node.content = `# File Explorer\n\nSebuah aplikasi penjelajah berkas interaktif dengan mode canvas.`;
+    } else {
+      node.content = `Ini adalah dokumen teks baru. Silakan ketik di sini...`;
+    }
+  }
+
+  editingItem = name;
+  selectedItems.clear();
+  selectedItems.add(name);
+  renderFiles();
+  
+  // Focus on the textarea
+  setTimeout(() => {
+    const editor = document.getElementById('textFileEditor');
+    if (editor) {
+      editor.focus();
+      // Put cursor at the end of text
+      const len = editor.value.length;
+      editor.setSelectionRange(len, len);
+    }
+  }, 100);
+}
+
+function saveEditedFile(e, name) {
+  if (e) {
+    e.stopPropagation();
+  }
+  const editor = document.getElementById('textFileEditor');
+  if (!editor) return;
+  const newContent = editor.value;
+  
+  const node = getFileNode(name);
+  if (node) {
+    node.content = newContent;
+    node.size = newContent.length;
+    node.dateModified = new Date().toISOString();
+  }
+  
+  editingItem = null;
+  render();
+  showToast('File berhasil disimpan');
+}
+
+function cancelEditFile(e) {
+  if (e) {
+    e.stopPropagation();
+  }
+  editingItem = null;
+  renderFiles();
+}
+
+function updateEditorWordCount(text) {
+  const el = document.getElementById('editorWordCount');
+  if (el) {
+    const lines = text.split('\n').length;
+    el.textContent = `Karakter: ${text.length} | Baris: ${lines}`;
+  }
+}
+
+window.startEditFile = startEditFile;
+window.saveEditedFile = saveEditedFile;
+window.cancelEditFile = cancelEditFile;
+window.updateEditorWordCount = updateEditorWordCount;
 
 // ===== INIT =====
 syncActiveTabState();
