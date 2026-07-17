@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>dof-grid v1.3 — Minimalist Adaptive Grid (Power-of-2)</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            touch-action: none;
+            z-index: 0;
+        }
+
+        .minimal-ui {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 11px;
+            color: #333333;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            min-width: 190px;
+        }
+
+        .status-row {
+            display: flex;
+            gap: 12px;
+            font-weight: 500;
+        }
+
+        .coords, .meta-row {
+            font-family: monospace;
+            color: #666666;
+        }
+
+        .meta-row {
+            font-size: 10px;
+            color: #999999;
+        }
+
+        .switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            border-top: 1px solid #eee;
+            padding-top: 6px;
+            color: #666666;
+        }
+
+        .switch {
+            position: relative;
+            inline-size: 28px;
+            block-size: 16px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: #e0e0e0;
+            border-radius: 16px;
+            transition: .2s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 12px;
+            width: 12px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            border-radius: 50%;
+            transition: .2s;
+        }
+
+        input:checked + .slider {
+            background-color: #333333;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(12px);
+        }
+
+        .hint-row {
+            font-size: 9px;
+            color: #999999;
+            border-top: 1px solid #eee;
+            padding-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="minimal-ui">
+        <div class="status-row">
+            <!-- UPDATE: default label disesuaikan dengan currentLevel baru -->
+            <span id="label-level">16×16</span>
+            <span id="label-coords" class="coords">-</span>
+        </div>
+        <div class="meta-row" id="label-grid">grid: 16×16</div>
+        <div class="meta-row" id="label-device">-</div>
+        <div class="switch-row">
+            <span>Fit</span>
+            <label class="switch">
+                <input type="checkbox" id="toggle-fit" aria-label="Toggle adaptive fit" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+        <div class="hint-row">Shift+Arrow: geser lock • 0: reset • Esc: unlock</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const labelLevel  = document.getElementById("label-level");
+        const labelCoords = document.getElementById("label-coords");
+        const labelGrid   = document.getElementById("label-grid");
+        const labelDevice = document.getElementById("label-device");
+        const toggleFit   = document.getElementById("toggle-fit");
+
+        // ====================================================
+        // GRID CONFIGURATION
+        // UPDATE: sistem power-of-2, 1×1 s/d 256×256 (9 level)
+        // Lompatan konsisten 4x jumlah sel di tiap step (2ⁿ × 2ⁿ)
+        // ====================================================
+        const levels = [
+            { key: '1×1',     cols: 1,   rows: 1   },
+            { key: '2×2',     cols: 2,   rows: 2   },
+            { key: '4×4',     cols: 4,   rows: 4   },
+            { key: '8×8',     cols: 8,   rows: 8   },
+            { key: '16×16',   cols: 16,  rows: 16  },
+            { key: '32×32',   cols: 32,  rows: 32  },
+            { key: '64×64',   cols: 64,  rows: 64  },
+            { key: '128×128', cols: 128, rows: 128 },
+            { key: '256×256', cols: 256, rows: 256 },
+        ];
+
+        const levelMap = {};
+        levels.forEach(l => { levelMap[l.key] = l; });
+
+        // UPDATE: default level baru — titik tengah dari 9 level (index 4 = '16×16')
+        let currentLevel = '16×16';
+        let fitMode = true;
+
+        function getConfig() {
+            return levelMap[currentLevel];
+        }
+
+        // ====================================================
+        // CONSTANTS & COLORS
+        // ====================================================
+        const COLORS = {
+            bg:       "#ffffff",
+            grid:     "#d0d0d0",
+            center:   "#b0b0b0",
+            dot:      "#999999",
+            lock:     "#333333",
+        };
+
+        const SCROLL_THRESHOLD = 40;
+        const PINCH_THRESHOLD = 15;
+        const LOCK_LINE_WIDTH = 2.5;
+        const MIN_VISIBLE_CELL_PX = 2;
+        const CLICK_AFTER_PINCH_GUARD_MS = 300;
+        // Catatan: pada level tertinggi 256×256 (65536 sel) dengan rasio layar
+        // paling ekstrem (ultra-wide ~2.33), hasil kalkulasi cols/rows masih
+        // jauh di bawah 2000, sehingga clamp ini tetap aman tanpa perlu diubah.
+        const FIT_MAX_CELLS_PER_AXIS = 2000;
+
+        let lockedCell = null; // { nx, ny } — posisi ternormalisasi 0..1
+        let rafId = null;
+        let lastPinchEndTime = 0;
+
+        function clamp(v, min, max) {
+            return Math.max(min, Math.min(max, v));
+        }
+
+        function scheduleDraw() {
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                rafId = null;
+                drawGrid();
+            });
+        }
+
+        // ====================================================
+        // MEKANISME "FIT" ADAPTIF
+        // ====================================================
+        function getOrientation(w, h) {
+            if (w > h) return 'landscape';
+            if (w < h) return 'portrait';
+            return 'square';
+        }
+
+        // Density-Preserving Adaptive Grid:
+        // cols = sqrt(N*A), rows = sqrt(N/A)
+        // dengan N = total sel target (baseCols*baseRows), A = w/h
+        function computeFitDimensions(baseCols, baseRows, w, h) {
+            const targetCells = baseCols * baseRows;
+            const aspect = w / h;
+
+            let cols = Math.round(Math.sqrt(targetCells * aspect));
+            let rows = Math.round(Math.sqrt(targetCells / aspect));
+
+            cols = clamp(cols, 1, FIT_MAX_CELLS_PER_AXIS);
+            rows = clamp(rows, 1, FIT_MAX_CELLS_PER_AXIS);
+
+            return { cols, rows };
+        }
+
+        function getEffectiveDims(config, w, h) {
+            if (!fitMode) {
+                return { cols: config.cols, rows: config.rows };
+            }
+            return computeFitDimensions(config.cols, config.rows, w, h);
+        }
+
+        // ====================================================
+        // GEOMETRY HELPER
+        // ====================================================
+        function computeGeometry(cols, rows) {
+            const w = innerWidth;
+            const h = innerHeight;
+            let cellW, cellH, offsetX, offsetY;
+
+            if (fitMode) {
+                const size = Math.min(w / cols, h / rows);
+                cellW = size;
+                cellH = size;
+                offsetX = (w - size * cols) / 2;
+                offsetY = (h - size * rows) / 2;
+            } else {
+                cellW = w / cols;
+                cellH = h / rows;
+                offsetX = 0;
+                offsetY = 0;
+            }
+
+            return {
+                w, h, cellW, cellH, offsetX, offsetY,
+                gridEndX: offsetX + (cellW * cols),
+                gridEndY: offsetY + (cellH * rows),
+            };
+        }
+
+        function getLockedCellIndex(cols, rows) {
+            if (!lockedCell) return null;
+            let col = Math.floor(lockedCell.nx * cols);
+            let row = Math.floor(lockedCell.ny * rows);
+            col = clamp(col, 0, cols - 1);
+            row = clamp(row, 0, rows - 1);
+            return { col, row };
+        }
+
+        // ====================================================
+        // RENDERER ENGINE
+        // ====================================================
+        function drawGrid() {
+            const config = getConfig();
+            const w = innerWidth;
+            const h = innerHeight;
+
+            const { cols, rows } = getEffectiveDims(config, w, h);
+            const { cellW, cellH, offsetX, offsetY, gridEndX, gridEndY } = computeGeometry(cols, rows);
+
+            ctx.fillStyle = COLORS.bg;
+            ctx.fillRect(0, 0, w, h);
+
+            const showGridLines = cellW >= MIN_VISIBLE_CELL_PX && cellH >= MIN_VISIBLE_CELL_PX;
+
+            if (showGridLines) {
+                if (cols > 0) {
+                    ctx.strokeStyle = COLORS.grid;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    for (let c = 0; c <= cols; c++) {
+                        const x = (c === 0) ? offsetX : (c === cols ? gridEndX : offsetX + (c * cellW));
+                        ctx.moveTo(x, offsetY);
+                        ctx.lineTo(x, gridEndY);
+                    }
+                    ctx.stroke();
+                }
+
+                if (rows > 0) {
+                    ctx.strokeStyle = COLORS.grid;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    for (let r = 0; r <= rows; r++) {
+                        const y = (r === 0) ? offsetY : (r === rows ? gridEndY : offsetY + (r * cellH));
+                        ctx.moveTo(offsetX, y);
+                        ctx.lineTo(gridEndX, y);
+                    }
+                    ctx.stroke();
+                }
+            } else {
+                ctx.strokeStyle = COLORS.grid;
+                ctx.lineWidth = 1;
+                ctx.strokeRect(offsetX, offsetY, gridEndX - offsetX, gridEndY - offsetY);
+            }
+
+            if (cols % 2 === 0 && rows % 2 === 0) {
+                const cx = w / 2, cy = h / 2;
+                ctx.strokeStyle = COLORS.center;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(cx, offsetY); ctx.lineTo(cx, gridEndY);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(offsetX, cy); ctx.lineTo(gridEndX, cy);
+                ctx.stroke();
+                ctx.fillStyle = COLORS.dot;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (cols % 2 === 1 && rows % 2 === 1) {
+                const cx = w / 2, cy = h / 2;
+                ctx.fillStyle = COLORS.dot;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            const lockedIndex = getLockedCellIndex(cols, rows);
+            if (lockedIndex) {
+                ctx.strokeStyle = COLORS.lock;
+                ctx.lineWidth = LOCK_LINE_WIDTH;
+                const lockX = offsetX + (lockedIndex.col * cellW);
+                const lockY = offsetY + (lockedIndex.row * cellH);
+                ctx.strokeRect(lockX, lockY, cellW, cellH);
+            }
+
+            labelLevel.textContent = currentLevel;
+            labelCoords.textContent = lockedIndex ? `[${lockedIndex.col},${lockedIndex.row},0]` : "-";
+            labelGrid.textContent = fitMode
+                ? `grid: ${cols}×${rows} (adaptif)`
+                : `grid: ${cols}×${rows} (stretch)`;
+
+            const orientation = getOrientation(w, h);
+            const ratio = (w / h).toFixed(3);
+            labelDevice.textContent = `${Math.round(w)}×${Math.round(h)}px · ${orientation} · ratio ${ratio}`;
+        }
+
+        // ====================================================
+        // NAVIGASI LEVEL
+        // ====================================================
+        function setLevel(key) {
+            if (!levelMap[key]) return;
+            if (key === currentLevel) return;
+            currentLevel = key;
+            scheduleDraw();
+        }
+
+        function getNext() {
+            const idx = levels.findIndex(l => l.key === currentLevel);
+            return idx < levels.length - 1 ? levels[idx + 1].key : null;
+        }
+
+        function getPrev() {
+            const idx = levels.findIndex(l => l.key === currentLevel);
+            return idx > 0 ? levels[idx - 1].key : null;
+        }
+
+        // ====================================================
+        // LOCK INTERACTION
+        // ====================================================
+        function toggleLockAt(clientX, clientY) {
+            const config = getConfig();
+            const { cols, rows } = getEffectiveDims(config, innerWidth, innerHeight);
+            const { cellW, cellH, offsetX, offsetY, gridEndX, gridEndY } = computeGeometry(cols, rows);
+
+            if (clientX < offsetX || clientX > gridEndX || clientY < offsetY || clientY > gridEndY) {
+                return;
+            }
+
+            const localX = clientX - offsetX;
+            const localY = clientY - offsetY;
+
+            let col = Math.floor(localX / cellW);
+            let row = Math.floor(localY / cellH);
+            col = clamp(col, 0, cols - 1);
+            row = clamp(row, 0, rows - 1);
+
+            const currentIndex = getLockedCellIndex(cols, rows);
+            if (currentIndex && currentIndex.col === col && currentIndex.row === row) {
+                lockedCell = null;
+            } else {
+                lockedCell = {
+                    nx: (col + 0.5) / cols,
+                    ny: (row + 0.5) / rows,
+                };
+            }
+            scheduleDraw();
+        }
+
+        canvas.addEventListener("click", e => {
+            if (pinchDist !== null) return;
+            if (Date.now() - lastPinchEndTime < CLICK_AFTER_PINCH_GUARD_MS) return;
+            toggleLockAt(e.clientX, e.clientY);
+        });
+
+        toggleFit.addEventListener("change", (e) => {
+            fitMode = e.target.checked;
+            scheduleDraw();
+        });
+
+        // ====================================================
+        // INPUT CONTROLS
+        // ====================================================
+        let scrollAcc = 0;
+        canvas.addEventListener("wheel", e => {
+            e.preventDefault();
+            scrollAcc += e.deltaY;
+            if (Math.abs(scrollAcc) >= SCROLL_THRESHOLD) {
+                if (scrollAcc > 0) { const n = getNext(); if (n) setLevel(n); }
+                else { const p = getPrev(); if (p) setLevel(p); }
+                scrollAcc = 0;
+            }
+        }, { passive: false });
+
+        addEventListener("keydown", e => {
+            if (e.shiftKey && lockedCell) {
+                const config = getConfig();
+                const { cols, rows } = getEffectiveDims(config, innerWidth, innerHeight);
+                let { col, row } = getLockedCellIndex(cols, rows);
+                let handled = true;
+
+                switch (e.key) {
+                    case "ArrowRight": col = Math.min(cols - 1, col + 1); break;
+                    case "ArrowLeft":  col = Math.max(0, col - 1); break;
+                    case "ArrowDown":  row = Math.min(rows - 1, row + 1); break;
+                    case "ArrowUp":    row = Math.max(0, row - 1); break;
+                    default: handled = false;
+                }
+
+                if (handled) {
+                    e.preventDefault();
+                    lockedCell = { nx: (col + 0.5) / cols, ny: (row + 0.5) / rows };
+                    scheduleDraw();
+                    return;
+                }
+            }
+
+            switch (e.key) {
+                case "ArrowRight":
+                case "ArrowDown":
+                    e.preventDefault();
+                    { const n = getNext(); if (n) setLevel(n); }
+                    break;
+                case "ArrowLeft":
+                case "ArrowUp":
+                    e.preventDefault();
+                    { const p = getPrev(); if (p) setLevel(p); }
+                    break;
+                case "0":
+                    e.preventDefault();
+                    // UPDATE: target reset disesuaikan ke level default baru
+                    setLevel('16×16');
+                    break;
+                case "Escape":
+                    if (lockedCell) { lockedCell = null; scheduleDraw(); }
+                    break;
+            }
+        });
+
+        let pinchDist = null;
+        function getDist(a, b) {
+            return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+        }
+
+        canvas.addEventListener("touchstart", e => {
+            if (e.touches.length === 2) pinchDist = getDist(e.touches[0], e.touches[1]);
+        }, { passive: false });
+
+        canvas.addEventListener("touchmove", e => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const d = getDist(e.touches[0], e.touches[1]);
+                if (pinchDist !== null && Math.abs(d - pinchDist) > PINCH_THRESHOLD) {
+                    if (d > pinchDist) { const n = getNext(); if (n) setLevel(n); }
+                    else { const p = getPrev(); if (p) setLevel(p); }
+                    pinchDist = d;
+                }
+            }
+        }, { passive: false });
+
+        canvas.addEventListener("touchend", e => {
+            if (e.touches.length < 2) {
+                if (pinchDist !== null) lastPinchEndTime = Date.now();
+                pinchDist = null;
+            }
+        });
+
+        // ====================================================
+        // RESIZE / ORIENTATION CHANGE
+        // ====================================================
+        let resizeRafId = null;
+
+        function resize() {
+            if (resizeRafId) cancelAnimationFrame(resizeRafId);
+            resizeRafId = requestAnimationFrame(() => {
+                resizeRafId = null;
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = innerWidth * dpr;
+                canvas.height = innerHeight * dpr;
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                scheduleDraw();
+            });
+        }
+
+        addEventListener("resize", resize);
+        addEventListener("orientationchange", resize);
+        resize();
+    </script>
+</body>
+</html>
